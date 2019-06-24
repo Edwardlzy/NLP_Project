@@ -2,6 +2,7 @@ import subprocess, os, sys
 from itertools import product
 import argparse, signal, datetime
 from launcher_utils import *
+import re
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_id', type=int, default=0)
@@ -17,7 +18,7 @@ parser.add_argument('--batch_config', type=str, default='')
 parser.add_argument('--exclude', type=str, default='')
 parser.add_argument('--noautosave', dest='noautosave', action='store_true')
 parser.add_argument('--local', dest='local', action='store_true')
-parser.add_argument('--interactive', dest='interative', action='store_true')
+parser.add_argument('--interactive', dest='interactive', action='store_true')
 parser.add_argument('--cslab', dest='cslab', action='store_true')
 parser.add_argument('--nogobi', dest='nogobi', action='store_true')
 parser.add_argument('--stats', dest='stats', action='store_true')
@@ -25,6 +26,17 @@ parser.add_argument('--submit', dest='submit', action='store_true')
 parser.add_argument('--dry_run', dest='dry_run', action='store_true')
 parser.add_argument('--cancel_all', dest='cancel_all', action='store_true')
 parser.add_argument('--cancel_confirm', dest='cancel_confirm', action='store_true')
+# Arguments for distributed training
+parser.add_argument('--distributed', dest='distributed', action='store_true')
+parser.add_argument('--master_address', type=str, default='gpu012:5555')
+parser.add_argument('--worker_address', type=str, help='Comma-separated node name(s).')
+parser.add_argument('--master_args_path', type=str, default='./example_master_arguments.txt')
+parser.add_argument('--worker_args_path', type=str, default='./example_worker_arguments.txt')
+parser.add_argument('--num_gpus_per_worker', type=int, default=4, help='Number of GPU per worker. (8 on q cluester, 4 on Vaughan cluster)')
+parser.add_argument('--num_cpus_per_worker', type=int, default=8, help='Number of CPU per worker.')
+parser.add_argument('--mem_per_worker', type=int, default=48)
+parser.add_argument('--master_mem', type=int, default=32)
+parser.add_argument('--master_num_cpus', type=int, default=8)
 
 global FLAGS
 FLAGS, extraFLAGS = parser.parse_known_args()
@@ -39,9 +51,27 @@ assert FLAGS.batch_config != '' or FLAGS.binary != '', 'config file or binary ca
 if FLAGS.batch_config != '':
   execfile(FLAGS.batch_config)
 
-# Here for tf_config
+if FLAGS.distributed:
+  # Here for tf_config
+  master_gpu = FLAGS.master_address.split(':')[0]
+  master_partition = get_partition(master_gpu)
+  workers = FLAGS.worker_address.split(',')
+  num_workers = len(workers)
 
-# Add case for worker & master setup command.
+  # Generate TF_CONFIG
+  TF_CONFIG_CMD = "srun --gres=gpu:1 -c 4 --mem=8G -w {} -p {} t2t-make-tf-configs --masters={} --ps={}".format(master_gpu, master_partition, FLAGS.master_address, FLAGS.worker_address)
+  MASTER_TF_CONFIG = 'export TF_CONFIG=\'{"cluster": {"master": [{}], "ps": {}}, "environment": "cloud", "task": {"index": 0, "type": "master"}}\';'.format(FLAGS.master_address, FLAGS.worker_address.split(','))
+  MASTER_SLURM_CMD = "srun --mem {}G --gres=gpu:1 -c {} -w {} -p {} ".format(FLAGS.master_mem, FLAGS.master_num_cpus, master_gpu, master_partition)
+
+  WORKER_TF_CONFIG = []
+  WORKER_SLURM_CMD = []
+  
+  for i in range(num_workers):
+    cur_worker_node = workers[i].split(':')[0]
+    cur_worker_tf_config = 'export TF_CONFIG=\'{"cluster": {"master": [{}], "ps": {}}, "environment": "cloud", "task": {"index": {}, "type": "ps"}}\''.format(FLAGS.master_address, FLAGS.worker_address.split(','), i)
+    cur_worker_slurm_cmd = "srun --mem {}G --gres=gpu:{} -c {} -w {} -p {} ".format(FLAGS.mem_per_worker, FLAGS.num_gpus_per_worker, FLAGS.num_cpus_per_worker, cur_worker_node, get_partition(cur_worker_node))
+    WORKER_TF_CONFIG.append(cur_worker_tf_config)
+    WORKER_SLURM_CMD.append(cur_worker_slurm_cmd)
 
 if FLAGS.cslab:
   SLURM_CMD = "srun --mem {}gb --gres=gpu:{} -c {} -l -x {} -p {}c ".format(FLAGS.mem, FLAGS.num_gpus, FLAGS.num_cpus, "guppy10,guppy[13-22]", FLAGS.partition)
@@ -62,6 +92,7 @@ PYTHON_CMD = sys.executable
 BASE_SAVE_DIR = os.path.join(HOME_DIR, "gobi_local", EXP_NAME)
 job_instance = local_job if FLAGS.local else slurm_job
 
+
 def main(_):
   jobs = create_jobs(FLAGS.job_id)
 
@@ -73,7 +104,7 @@ def main(_):
     for job in jobs:
       job.start()
 
-    if FLAGS.submit and FLAGS.interative:
+    if FLAGS.submit and FLAGS.interactive:
       try:
         job.interact()
       except KeyboardInterrupt:
@@ -82,6 +113,7 @@ def main(_):
   if FLAGS.cancel_all:
     for job in jobs:
       job.cancel()
+
 
 def hyperParamIterator():
   ### loop over permutations of all the hyper-params
@@ -92,7 +124,8 @@ def hyperParamIterator():
     hyperparams = ' '.join([' '.join([i, str(j)]) for i,j in zip(search_params.keys(), p_params)])
     yield hyperparams.strip(' ')
 
-def script_command(binary, exp_name, hyperparams, gpu_id):
+
+def script_command(binary, exp_name, hyperparams, gpu_id, slurm_cmd=SLURM_CMD):
   hyperparams_name = hyperparams.replace('-','').replace(' ','_').replace('.','')
   save_name = '_'.join([exp_name, hyperparams_name])
   if len(extraFLAGS) > 0:
@@ -110,7 +143,7 @@ def script_command(binary, exp_name, hyperparams, gpu_id):
     else:
       # one-off on slurm
       JOB_ID = str(datetime.datetime.now().strftime("%d%H%M%S"))
-    LAUNCH_CMD = SLURM_CMD + '-J {}'.format(JOB_ID)
+    LAUNCH_CMD = slurm_cmd + '-J {}'.format(JOB_ID)
   else:
     # on local workstation
     JOB_ID = "CUDA_VISIBLE_DEVICES="+ str(LOCAL_GPU_ID[gpu_id])
@@ -130,6 +163,7 @@ def script_command(binary, exp_name, hyperparams, gpu_id):
   script_command = LAUNCH_CMD + " " + " ".join(script_command_list)
 
   return script_command, JOB_ID, save_dir
+
 
 def create_jobs(job_id):
   jobs = []
@@ -151,6 +185,55 @@ def create_jobs(job_id):
     return jobs
   else:
     return [jobs[job_id],]
+
+
+def create_distributed_jobs(job_id, parameters, is_master=False):
+  """ Creates a list of jobs of master and workers. """
+  jobs = []
+  GPU_ID_COUNT = 0
+  if is_master:
+    with open(FLAGS.master_args_path) as f:
+      master_args = f.read()
+    # Make sure the address and port are consistent as defined by other params.
+    master_args = re.sub(r"grpc\S*", 'grpc://'+FLAGS.master_address, master_args)
+    # Make sure the number of GPUs per worker is consistent.
+    master_args = re.sub(r"ps_gpu=\d+", 'ps_gpu='+str(FLAGS.num_gpus_per_worker), master_args)
+    # Makesure the number of workers is consistent.
+    master_args = re.sub(r"ps_gpu=\d+", 'ps_replicas='+str(num_workers), master_args)
+    slurm_cmd = MASTER_TF_CONFIG + ' ' + MASTER_SLURM_CMD
+    cmd, job_id_str, save_dir = script_command(FLAGS.binary, EXP_NAME, master_args, GPU_ID_COUNT, slurm_cmd)
+    print(cmd)
+    jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
+  else:
+    with open(FLAGS.worker_args_path) as f:
+      worker_args = f.read()
+    for i in range(num_workers):
+      slurm_cmd = WORKER_TF_CONFIG[i] + ' ' + WORKER_SLURM_CMD[i]
+      cmd, job_id_str, save_dir = script_command(FLAGS.binary, EXP_NAME, worker_args, GPU_ID_COUNT, slurm_cmd)
+      print(cmd)
+      jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
+
+  if job_id == -1:
+    return jobs
+  else:
+    return [jobs[job_id],]
+
+def get_partition(hostname, is_q=False):
+  """ Return the partition of a given gpu node of the format 'gpuxxx' """
+  number = int(re.findall('\d+', gpu)[0])
+  if 'cpu' in hostname:
+    return 'cpu'
+  else:
+    if is_q:
+      if number == 1: return 'interactive'
+      elif 5 <= number <= 7: return 'nlp'
+      elif number >= 116: return 'wsgpu'
+      else: return 'gpu'
+    else:  # Vaughan cluester
+      if number == 59: return 'interactive'
+      elif 4 <= number <= 6: return 'max12hours'
+      elif 17 <= number <= 26: return 't4'
+      else: return 'p100'
 
 
 if __name__ == '__main__':
