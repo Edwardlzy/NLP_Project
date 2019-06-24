@@ -39,6 +39,10 @@ assert FLAGS.batch_config != '' or FLAGS.binary != '', 'config file or binary ca
 if FLAGS.batch_config != '':
   execfile(FLAGS.batch_config)
 
+# Here for tf_config
+
+# Add case for worker & master setup command.
+
 if FLAGS.cslab:
   SLURM_CMD = "srun --mem {}gb --gres=gpu:{} -c {} -l -x {} -p {}c ".format(FLAGS.mem, FLAGS.num_gpus, FLAGS.num_cpus, "guppy10,guppy[13-22]", FLAGS.partition)
 else:
