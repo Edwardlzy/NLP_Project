@@ -94,7 +94,11 @@ job_instance = local_job if FLAGS.local else slurm_job
 
 
 def main(_):
-  jobs = create_jobs(FLAGS.job_id)
+  if FLAGS.distributed:
+    jobs = create_distributed_jobs(FLAGS.job_id)
+    jobs += create_distributed_jobs(FLAGS.job_id, is_master=True)
+  else:
+    jobs = create_jobs(FLAGS.job_id)
 
   if FLAGS.stats:
     for job in jobs:
@@ -187,7 +191,7 @@ def create_jobs(job_id):
     return [jobs[job_id],]
 
 
-def create_distributed_jobs(job_id, parameters, is_master=False):
+def create_distributed_jobs(job_id, is_master=False):
   """ Creates a list of jobs of master and workers. """
   jobs = []
   GPU_ID_COUNT = 0
@@ -199,7 +203,7 @@ def create_distributed_jobs(job_id, parameters, is_master=False):
     # Make sure the number of GPUs per worker is consistent.
     master_args = re.sub(r"ps_gpu=\d+", 'ps_gpu='+str(FLAGS.num_gpus_per_worker), master_args)
     # Makesure the number of workers is consistent.
-    master_args = re.sub(r"ps_gpu=\d+", 'ps_replicas='+str(num_workers), master_args)
+    master_args = re.sub(r"ps_replicas=\d+", 'ps_replicas='+str(num_workers), master_args)
     slurm_cmd = MASTER_TF_CONFIG + ' ' + MASTER_SLURM_CMD
     cmd, job_id_str, save_dir = script_command(FLAGS.binary, EXP_NAME, master_args, GPU_ID_COUNT, slurm_cmd)
     print(cmd)
@@ -217,6 +221,7 @@ def create_distributed_jobs(job_id, parameters, is_master=False):
     return jobs
   else:
     return [jobs[job_id],]
+
 
 def get_partition(hostname, is_q=False):
   """ Return the partition of a given gpu node of the format 'gpuxxx' """
