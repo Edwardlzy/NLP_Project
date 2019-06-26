@@ -11,7 +11,7 @@ parser.add_argument('--num_gpus', type=int, default=1)
 parser.add_argument('--mem', type=int, default=16)
 parser.add_argument('--partition', type=str, default='gpu')
 parser.add_argument('--job_id', type=int, default=-1)
-parser.add_argument('--binary', type=str, default='')
+parser.add_argument('--binary', type=str, default='t2t-trainer')
 parser.add_argument('--local_gpu_id', type=int, default=-1)
 parser.add_argument('--username', type=str, default='jba')
 parser.add_argument('--batch_config', type=str, default='')
@@ -29,7 +29,7 @@ parser.add_argument('--cancel_confirm', dest='cancel_confirm', action='store_tru
 # Arguments for distributed training
 parser.add_argument('--distributed', dest='distributed', action='store_true')
 parser.add_argument('--master_address', type=str, default='gpu012:5555')
-parser.add_argument('--worker_address', type=str, help='Comma-separated node name(s).')
+parser.add_argument('--worker_address', type=str, default='gpu042:5555,gpu045:5555', help='Comma-separated node name(s).')
 parser.add_argument('--master_args_path', type=str, default='./example_master_arguments.txt')
 parser.add_argument('--worker_args_path', type=str, default='./example_worker_arguments.txt')
 parser.add_argument('--num_gpus_per_worker', type=int, default=4, help='Number of GPU per worker. (8 on q cluester, 4 on Vaughan cluster)')
@@ -37,6 +37,8 @@ parser.add_argument('--num_cpus_per_worker', type=int, default=8, help='Number o
 parser.add_argument('--mem_per_worker', type=int, default=48)
 parser.add_argument('--master_mem', type=int, default=32)
 parser.add_argument('--master_num_cpus', type=int, default=8)
+parser.add_argument('--is_q', dest='is_q', action='store_true', help='Whether on MaRS or Vaughan cluster')
+parser.add_argument('--async', dest='async', action='store_true', help='Whether to launch synchronous or asynchronous distributed training.')
 
 global FLAGS
 FLAGS, extraFLAGS = parser.parse_known_args()
@@ -53,23 +55,48 @@ if FLAGS.batch_config != '':
 
 if FLAGS.distributed:
   # Here for tf_config
-  master_gpu = FLAGS.master_address.split(':')[0]
-  master_partition = get_partition(master_gpu)
+  # master_gpu = FLAGS.master_address.split(':')[0]
+  # master_partition = get_partition(master_gpu, FLAGS.is_q)
+
+  masters = FLAGS.master_address.split(',')
+  num_masters = len(masters)
   workers = FLAGS.worker_address.split(',')
   num_workers = len(workers)
 
   # Generate TF_CONFIG
-  TF_CONFIG_CMD = "srun --gres=gpu:1 -c 4 --mem=8G -w {} -p {} t2t-make-tf-configs --masters={} --ps={}".format(master_gpu, master_partition, FLAGS.master_address, FLAGS.worker_address)
-  MASTER_TF_CONFIG = 'export TF_CONFIG=\'{"cluster": {"master": [{}], "ps": {}}, "environment": "cloud", "task": {"index": 0, "type": "master"}}\';'.format(FLAGS.master_address, FLAGS.worker_address.split(','))
-  MASTER_SLURM_CMD = "srun --mem {}G --gres=gpu:1 -c {} -w {} -p {} ".format(FLAGS.master_mem, FLAGS.master_num_cpus, master_gpu, master_partition)
+  MAKE_TF_CONFIGS = "--masters={} --ps={}".format(FLAGS.master_address, FLAGS.worker_address)
+  
+  # Setup master(s)
+  MASTER_TF_CONFIG = []
+  MASTER_SLURM_CMD = []
+  for i in range(num_masters):
+    cur_master = masters[i].split(':')[0]
+    if not FLAGS.async:
+      cur_master_tf_config = 'TF_CONFIG=\'{"cluster": {"master": {}, "ps": {}}, "environment": "cloud", "task": {"index": {}, "type": "master"}}\';'.format(FLAGS.master_address.split(','), FLAGS.worker_address.split(','), i)
+    else:
+      if i == 0:
+        cur_master_tf_config = 'TF_CONFIG=\'{"task": {"index": 0, "type": "chief"}, "cluster": {"chief": {}, "ps": {}, "worker": {}}, "environment": "cloud"}\''.format([masters[0]], workers, masters[1:])
+      else:
+        cur_master_tf_config = 'TF_CONFIG=\'{"task": {"index": 0, "type": "worker"}, "cluster": {"chief": {}, "ps": {}, "worker": {}}, "environment": "cloud"}\''.format([masters[0]], workers, masters[1:])
+    cur_master_slurm_cmd = "srun --mem {}G --gres=gpu:1 -c {} -w {} -p {} ".format(FLAGS.master_mem, FLAGS.master_num_cpus, cur_master, get_partition(cur_master, FLAGS.is_q))
+    MASTER_TF_CONFIG.append(cur_master_tf_config)
+    MASTER_SLURM_CMD.append(cur_master_slurm_cmd)
+
+  # TF_CONFIG_CMD = "srun --gres=gpu:1 -c 4 --mem=8G -w {} -p {} t2t-make-tf-configs --masters={} --ps={}".format(master_gpu, master_partition, FLAGS.master_address, FLAGS.worker_address)
+  # MAKE_TF_CONFIGS = "t2t-make-tf-configs --masters={} --ps={}".format(FLAGS.master_address, FLAGS.worker_address)
+  # MASTER_TF_CONFIG = 'export TF_CONFIG=\'{"cluster": {"master": [{}], "ps": {}}, "environment": "cloud", "task": {"index": 0, "type": "master"}}\';'.format(FLAGS.master_address, FLAGS.worker_address.split(','))
+  # MASTER_SLURM_CMD = "srun --mem {}G --gres=gpu:1 -c {} -w {} -p {} ".format(FLAGS.master_mem, FLAGS.master_num_cpus, master_gpu, master_partition)
 
   WORKER_TF_CONFIG = []
   WORKER_SLURM_CMD = []
   
   for i in range(num_workers):
     cur_worker_node = workers[i].split(':')[0]
-    cur_worker_tf_config = 'export TF_CONFIG=\'{"cluster": {"master": [{}], "ps": {}}, "environment": "cloud", "task": {"index": {}, "type": "ps"}}\''.format(FLAGS.master_address, FLAGS.worker_address.split(','), i)
-    cur_worker_slurm_cmd = "srun --mem {}G --gres=gpu:{} -c {} -w {} -p {} ".format(FLAGS.mem_per_worker, FLAGS.num_gpus_per_worker, FLAGS.num_cpus_per_worker, cur_worker_node, get_partition(cur_worker_node))
+    if not FLAGS.async:
+      cur_worker_tf_config = 'TF_CONFIG=\'{"cluster": {"master": [{}], "ps": {}}, "environment": "cloud", "task": {"index": {}, "type": "ps"}}\''.format(FLAGS.master_address, FLAGS.worker_address.split(','), i)
+    else:
+      cur_worker_tf_config = 'TF_CONFIG=\'{"task": {"index": {}, "type": "ps"}, "cluster": {"chief": {}, "ps": {}, "worker": {}}, "environment": "cloud"}\''.format(i, [masters[0]], workers, masters[1:])
+    cur_worker_slurm_cmd = "srun --mem {}G --gres=gpu:{} -c {} -w {} -p {} ".format(FLAGS.mem_per_worker, FLAGS.num_gpus_per_worker, FLAGS.num_cpus_per_worker, cur_worker_node, get_partition(cur_worker_node, FLAGS.is_q))
     WORKER_TF_CONFIG.append(cur_worker_tf_config)
     WORKER_SLURM_CMD.append(cur_worker_slurm_cmd)
 
@@ -95,8 +122,8 @@ job_instance = local_job if FLAGS.local else slurm_job
 
 def main(_):
   if FLAGS.distributed:
-    jobs = create_distributed_jobs(FLAGS.job_id)
-    jobs += create_distributed_jobs(FLAGS.job_id, is_master=True)
+    jobs = create_distributed_jobs(FLAGS.job_id, is_master=True)
+    jobs += create_distributed_jobs(FLAGS.job_id)
   else:
     jobs = create_jobs(FLAGS.job_id)
 
@@ -129,7 +156,7 @@ def hyperParamIterator():
     yield hyperparams.strip(' ')
 
 
-def script_command(binary, exp_name, hyperparams, gpu_id, slurm_cmd=SLURM_CMD):
+def script_command(binary, exp_name, hyperparams, gpu_id, slurm_cmd=SLURM_CMD, is_bash=False):
   hyperparams_name = hyperparams.replace('-','').replace(' ','_').replace('.','')
   save_name = '_'.join([exp_name, hyperparams_name])
   if len(extraFLAGS) > 0:
@@ -152,10 +179,13 @@ def script_command(binary, exp_name, hyperparams, gpu_id, slurm_cmd=SLURM_CMD):
     # on local workstation
     JOB_ID = "CUDA_VISIBLE_DEVICES="+ str(LOCAL_GPU_ID[gpu_id])
     LAUNCH_CMD = JOB_ID
-  script_command_list = [PYTHON_CMD, 
-                         binary,  
-                         hyperparams, 
-                        ] 
+  if not is_bash:
+    script_command_list = [PYTHON_CMD, 
+                           binary,  
+                           hyperparams, 
+                          ] 
+  else:
+    script_command_list = [binary, hyperparams]
   if not FLAGS.noautosave:
     script_command_list += ["--save_name", save_name, 
                             "--save_dir", save_dir,]
@@ -195,25 +225,47 @@ def create_distributed_jobs(job_id, is_master=False):
   """ Creates a list of jobs of master and workers. """
   jobs = []
   GPU_ID_COUNT = 0
+
   if is_master:
-    with open(FLAGS.master_args_path) as f:
-      master_args = f.read()
-    # Make sure the address and port are consistent as defined by other params.
-    master_args = re.sub(r"grpc\S*", 'grpc://'+FLAGS.master_address, master_args)
-    # Make sure the number of GPUs per worker is consistent.
-    master_args = re.sub(r"ps_gpu=\d+", 'ps_gpu='+str(FLAGS.num_gpus_per_worker), master_args)
-    # Makesure the number of workers is consistent.
-    master_args = re.sub(r"ps_replicas=\d+", 'ps_replicas='+str(num_workers), master_args)
-    slurm_cmd = MASTER_TF_CONFIG + ' ' + MASTER_SLURM_CMD
-    cmd, job_id_str, save_dir = script_command(FLAGS.binary, EXP_NAME, master_args, GPU_ID_COUNT, slurm_cmd)
+    # Setup TF_CONFIG first.
+    cmd, job_id_str, save_dir = script_command('t2t-make-tf-configs', EXP_NAME, MAKE_TF_CONFIGS, GPU_ID_COUNT, MASTER_SLURM_CMD[0])
     print(cmd)
     jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
+
+    with open(FLAGS.master_args_path) as f:
+      partial_master_args = f.read()
+
+    for i in range(num_masters):
+      # Build the hyperparameters for the current master node.
+      if FLAGS.async:
+        worker_job = '/job:chief' if i == 0 else '/job:worker'
+      else:
+        worker_job = '/job:master'
+      master_args = "--master=grpc://{} --ps_replicas={} --worker_replicas={} --worker_gpu=1 --worker_id={} --ps_gpu={} --worker_job={} ".format(masters[i], num_workers, num_masters, i, FLAGS.num_gpus_per_worker, worker_job)
+      if not FLAGS.async: master_args += '--sync '
+      master_args += partial_master_args
+
+      # Export TF_CONFIG.
+      cmd, job_id_str, save_dir = script_command('export', EXP_NAME, MASTER_TF_CONFIG[i], GPU_ID_COUNT, MASTER_SLURM_CMD[i], True)
+      print(cmd)
+      jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
+
+      # Launch the master.
+      cmd, job_id_str, save_dir = script_command(FLAGS.binary, EXP_NAME, master_args, GPU_ID_COUNT, MASTER_SLURM_CMD[i])
+      print(cmd)
+      jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
+
   else:
     with open(FLAGS.worker_args_path) as f:
       worker_args = f.read()
     for i in range(num_workers):
-      slurm_cmd = WORKER_TF_CONFIG[i] + ' ' + WORKER_SLURM_CMD[i]
-      cmd, job_id_str, save_dir = script_command(FLAGS.binary, EXP_NAME, worker_args, GPU_ID_COUNT, slurm_cmd)
+      # Export TF_CONFIG.
+      cmd, job_id_str, save_dir = script_command('export', EXP_NAME, WORKER_TF_CONFIG[i], GPU_ID_COUNT, WORKER_SLURM_CMD[i], True)
+      print(cmd)
+      jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
+
+      # Launch the worker.
+      cmd, job_id_str, save_dir = script_command(FLAGS.binary, EXP_NAME, worker_args, GPU_ID_COUNT, WORKER_SLURM_CMD[i])
       print(cmd)
       jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
 
@@ -221,24 +273,6 @@ def create_distributed_jobs(job_id, is_master=False):
     return jobs
   else:
     return [jobs[job_id],]
-
-
-def get_partition(hostname, is_q=False):
-  """ Return the partition of a given gpu node of the format 'gpuxxx' """
-  number = int(re.findall('\d+', gpu)[0])
-  if 'cpu' in hostname:
-    return 'cpu'
-  else:
-    if is_q:
-      if number == 1: return 'interactive'
-      elif 5 <= number <= 7: return 'nlp'
-      elif number >= 116: return 'wsgpu'
-      else: return 'gpu'
-    else:  # Vaughan cluester
-      if number == 59: return 'interactive'
-      elif 4 <= number <= 6: return 'max12hours'
-      elif 17 <= number <= 26: return 't4'
-      else: return 'p100'
 
 
 if __name__ == '__main__':

@@ -1,1 +1,1 @@
---schedule=run_std_server --hparams_set=transformer_base
+--schedule=run_std_server

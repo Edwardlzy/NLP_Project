@@ -53,6 +53,25 @@ def get_log_file(path):
   else:
     return None
 
+
+def get_partition(hostname, is_q=False):
+  """ Return the partition of a given gpu node of the format 'gpuxxx' """
+  number = int(re.findall('\d+', gpu)[0])
+  if 'cpu' in hostname:
+    return 'cpu'
+  else:
+    if is_q:
+      if number == 1: return 'interactive'
+      elif 5 <= number <= 7: return 'nlp'
+      elif number >= 116: return 'wsgpu'
+      else: return 'gpu'
+    else:  # Vaughan cluester
+      if number == 59: return 'interactive'
+      elif 4 <= number <= 6: return 'max12hours'
+      elif 17 <= number <= 26: return 't4'
+      else: return 'p100'
+      
+
 class Job(object):
   def __init__(self, cmd, job_id, save_dir, args):
      self.cmd = cmd
