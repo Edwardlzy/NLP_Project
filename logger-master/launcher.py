@@ -255,7 +255,7 @@ def create_distributed_jobs(job_id, is_master=False):
 
       # Export TF_CONFIG.
       print('Exporting TF_CONFIG...')
-      cmd, job_id_str, save_dir = script_command('export', EXP_NAME, MASTER_TF_CONFIG[i], GPU_ID_COUNT, MASTER_SLURM_CMD[i], True)
+      cmd, job_id_str, save_dir = script_command('export', EXP_NAME, MASTER_TF_CONFIG[i], GPU_ID_COUNT, '', True)
       print(cmd)
       jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
 
@@ -271,7 +271,7 @@ def create_distributed_jobs(job_id, is_master=False):
     for i in range(num_workers):
       # Export TF_CONFIG.
       print('Setting up worker', workers[i])
-      cmd, job_id_str, save_dir = script_command('export', EXP_NAME, WORKER_TF_CONFIG[i], GPU_ID_COUNT, WORKER_SLURM_CMD[i], True)
+      cmd, job_id_str, save_dir = script_command('export', EXP_NAME, WORKER_TF_CONFIG[i], GPU_ID_COUNT, '', True)
       print(cmd)
       jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
 
