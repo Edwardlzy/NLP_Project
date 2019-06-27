@@ -43,6 +43,9 @@ parser.add_argument('--async', dest='async', action='store_true', help='Whether 
 global FLAGS
 FLAGS, extraFLAGS = parser.parse_known_args()
 
+print('FLAGS =', FLAGS)
+print('extraFLAGS =', extraFLAGS)
+
 ## one-off experiments using '--'
 if FLAGS.binary == '' and extraFLAGS[0] == '--':
   FLAGS.binary = extraFLAGS[1]
@@ -71,7 +74,7 @@ if FLAGS.distributed:
   MASTER_SLURM_CMD = []
   for i in range(num_masters):
     cur_master = masters[i].split(':')[0]
-    if not FLAGS.async:
+    if FLAGS.async == False:
       cur_master_tf_config = 'TF_CONFIG=\'{"cluster": {"master": {}, "ps": {}}, "environment": "cloud", "task": {"index": {}, "type": "master"}}\';'.format(FLAGS.master_address.split(','), FLAGS.worker_address.split(','), i)
     else:
       if i == 0:
