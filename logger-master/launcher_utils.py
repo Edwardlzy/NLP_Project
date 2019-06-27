@@ -1,6 +1,7 @@
 import subprocess, os
 import argparse
 import numpy as np
+import re
 try:
     import cPickle as pkl
     import commands
@@ -56,7 +57,7 @@ def get_log_file(path):
 
 def get_partition(hostname, is_q=False):
   """ Return the partition of a given gpu node of the format 'gpuxxx' """
-  number = int(re.findall('\d+', gpu)[0])
+  number = int(re.findall('\d+', hostname)[0])
   if 'cpu' in hostname:
     return 'cpu'
   else:

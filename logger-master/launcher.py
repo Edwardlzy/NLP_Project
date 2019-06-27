@@ -50,7 +50,7 @@ print('extraFLAGS =', extraFLAGS)
 if FLAGS.binary == '' and extraFLAGS[0] == '--':
   FLAGS.binary = extraFLAGS[1]
   extraFLAGS = extraFLAGS[2:]
-  EXP_NAME = os.path.splitext(FLAGS.binary)[0]
+EXP_NAME = os.path.splitext(FLAGS.binary)[0]
 
 assert FLAGS.batch_config != '' or FLAGS.binary != '', 'config file or binary cannot be empty'
 if FLAGS.batch_config != '':
@@ -137,6 +137,7 @@ def main(_):
 
   if FLAGS.submit or FLAGS.dry_run:
     for job in jobs:
+      print('Running job', job.cmd)
       job.start()
 
     if FLAGS.submit and FLAGS.interactive:
@@ -233,7 +234,7 @@ def create_distributed_jobs(job_id, is_master=False):
   if is_master:
     # Setup TF_CONFIG first.
     print('Running t2t-make-tf-configs...')
-    cmd, job_id_str, save_dir = script_command('t2t-make-tf-configs', EXP_NAME, MAKE_TF_CONFIGS, GPU_ID_COUNT, MASTER_SLURM_CMD[0])
+    cmd, job_id_str, save_dir = script_command('t2t-make-tf-configs', EXP_NAME, MAKE_TF_CONFIGS, GPU_ID_COUNT, MASTER_SLURM_CMD[0], True)
     print(cmd)
     jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
 
@@ -260,7 +261,7 @@ def create_distributed_jobs(job_id, is_master=False):
 
       # Launch the master.
       print('Launching the master...')
-      cmd, job_id_str, save_dir = script_command(FLAGS.binary, EXP_NAME, master_args, GPU_ID_COUNT, MASTER_SLURM_CMD[i])
+      cmd, job_id_str, save_dir = script_command(FLAGS.binary, EXP_NAME, master_args, GPU_ID_COUNT, MASTER_SLURM_CMD[i], True)
       print(cmd)
       jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
 
@@ -275,7 +276,7 @@ def create_distributed_jobs(job_id, is_master=False):
       jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
 
       # Launch the worker.
-      cmd, job_id_str, save_dir = script_command(FLAGS.binary, EXP_NAME, worker_args, GPU_ID_COUNT, WORKER_SLURM_CMD[i])
+      cmd, job_id_str, save_dir = script_command(FLAGS.binary, EXP_NAME, worker_args, GPU_ID_COUNT, WORKER_SLURM_CMD[i], True)
       print(cmd)
       jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
 
