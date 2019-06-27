@@ -179,7 +179,10 @@ def script_command(binary, exp_name, hyperparams, gpu_id, slurm_cmd=SLURM_CMD, i
     else:
       # one-off on slurm
       JOB_ID = str(datetime.datetime.now().strftime("%d%H%M%S"))
-    LAUNCH_CMD = slurm_cmd + '-J {}'.format(JOB_ID)
+    if slurm_cmd:
+      LAUNCH_CMD = slurm_cmd + '-J {}'.format(JOB_ID)
+    else:
+      LAUNCH_CMD = ''
   else:
     # on local workstation
     JOB_ID = "CUDA_VISIBLE_DEVICES="+ str(LOCAL_GPU_ID[gpu_id])
