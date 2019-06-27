@@ -3,6 +3,7 @@ from itertools import product
 import argparse, signal, datetime
 from launcher_utils import *
 import re
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_id', type=int, default=0)
@@ -67,7 +68,7 @@ if FLAGS.distributed:
   num_workers = len(workers)
 
   # Generate TF_CONFIG
-  MAKE_TF_CONFIGS = "--masters={} --ps={}".format(FLAGS.master_address, FLAGS.worker_address)
+  MAKE_TF_CONFIGS = "--masters='{}' --ps='{}'".format(FLAGS.master_address, FLAGS.worker_address)
   
   # Setup master(s)
   MASTER_TF_CONFIG = []
@@ -124,7 +125,6 @@ job_instance = local_job if FLAGS.local else slurm_job
 
 
 def main(_):
-  print('Entered main')
   if FLAGS.distributed:
     jobs = create_distributed_jobs(FLAGS.job_id, is_master=True)
     jobs += create_distributed_jobs(FLAGS.job_id)
@@ -139,6 +139,7 @@ def main(_):
     for job in jobs:
       print('Running job', job.cmd)
       job.start()
+      time.sleep(3)
 
     if FLAGS.submit and FLAGS.interactive:
       try:
