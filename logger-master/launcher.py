@@ -76,12 +76,12 @@ if FLAGS.distributed:
   for i in range(num_masters):
     cur_master = masters[i].split(':')[0]
     if not FLAGS.asynchronous:
-      cur_master_tf_config = 'TF_CONFIG=\'{{"cluster": {{"master": {}, "ps": {}}}, "environment": "cloud", "task": {{"index": {}, "type": "master"}}}}\''.format(FLAGS.master_address, FLAGS.worker_address.split(','), i)
+      cur_master_tf_config = 'TF_CONFIG=\'{{"cluster": {{"master": "{}", "ps": {}}}, "environment": "cloud", "task": {{"index": {}, "type": "master"}}}}\''.format(FLAGS.master_address, FLAGS.worker_address.split(','), i)
     else:
       if i == 0:
-        cur_master_tf_config = 'TF_CONFIG=\'{{"task": {{"index": 0, "type": "chief"}}, "cluster": {{"chief": {}, "ps": {}, "worker": {}}}, "environment": "cloud"}}\''.format([masters[0]], workers, masters[1:])
+        cur_master_tf_config = 'TF_CONFIG=\'{{"task": {{"index": 0, "type": "chief"}}, "cluster": {{"chief": "{}", "ps": {}, "worker": {}}}, "environment": "cloud"}}\''.format([masters[0]], workers, masters[1:])
       else:
-        cur_master_tf_config = 'TF_CONFIG=\'{{"task": {{"index": 0, "type": "worker"}}, "cluster": {{"chief": {}, "ps": {}, "worker": {}}}, "environment": "cloud"}}\''.format([masters[0]], workers, masters[1:])
+        cur_master_tf_config = 'TF_CONFIG=\'{{"task": {{"index": 0, "type": "worker"}}, "cluster": {{"chief": "{}", "ps": {}, "worker": {}}}, "environment": "cloud"}}\''.format([masters[0]], workers, masters[1:])
     cur_master_slurm_cmd = "srun --mem {}G --gres=gpu:1 -c {} -w {} -p {} ".format(FLAGS.master_mem, FLAGS.master_num_cpus, cur_master, get_partition(cur_master, FLAGS.is_q))
     MASTER_TF_CONFIG.append(cur_master_tf_config)
     MASTER_SLURM_CMD.append(cur_master_slurm_cmd)
