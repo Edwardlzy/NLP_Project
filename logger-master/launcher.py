@@ -126,8 +126,8 @@ job_instance = local_job if FLAGS.local else slurm_job
 
 def main(_):
   if FLAGS.distributed:
-    jobs = create_distributed_jobs(FLAGS.job_id, is_master=True)
-    jobs += create_distributed_jobs(FLAGS.job_id)
+    #jobs = create_distributed_jobs(FLAGS.job_id, is_master=True)
+    jobs = create_distributed_jobs(FLAGS.job_id)
   else:
     jobs = create_jobs(FLAGS.job_id)
 
