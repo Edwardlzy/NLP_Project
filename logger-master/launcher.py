@@ -38,10 +38,14 @@ parser.add_argument('--mem_per_worker', type=int, default=48)
 parser.add_argument('--master_mem', type=int, default=32)
 parser.add_argument('--master_num_cpus', type=int, default=8)
 parser.add_argument('--is_q', dest='is_q', action='store_true', help='Whether on MaRS or Vaughan cluster')
-parser.add_argument('--async', dest='async', action='store_true', help='Whether to launch synchronous or asynchronous distributed training.')
+parser.add_argument('--asynchronous', dest='asynchronous', action='store_true', help='Whether to launch synchronous or asynchronous distributed training.')
 
 global FLAGS
 FLAGS, extraFLAGS = parser.parse_known_args()
+
+# print(FLAGS.is_q)
+print('FLAGS =', FLAGS)
+print('extraFLAGS =', extraFLAGS)
 
 ## one-off experiments using '--'
 if FLAGS.binary == '' and extraFLAGS[0] == '--':
@@ -71,7 +75,7 @@ if FLAGS.distributed:
   MASTER_SLURM_CMD = []
   for i in range(num_masters):
     cur_master = masters[i].split(':')[0]
-    if not FLAGS.async:
+    if not FLAGS.asynchronous:
       cur_master_tf_config = 'TF_CONFIG=\'{"cluster": {"master": {}, "ps": {}}, "environment": "cloud", "task": {"index": {}, "type": "master"}}\';'.format(FLAGS.master_address.split(','), FLAGS.worker_address.split(','), i)
     else:
       if i == 0:
@@ -92,7 +96,7 @@ if FLAGS.distributed:
   
   for i in range(num_workers):
     cur_worker_node = workers[i].split(':')[0]
-    if not FLAGS.async:
+    if not FLAGS.asynchronous:
       cur_worker_tf_config = 'TF_CONFIG=\'{"cluster": {"master": [{}], "ps": {}}, "environment": "cloud", "task": {"index": {}, "type": "ps"}}\''.format(FLAGS.master_address, FLAGS.worker_address.split(','), i)
     else:
       cur_worker_tf_config = 'TF_CONFIG=\'{"task": {"index": {}, "type": "ps"}, "cluster": {"chief": {}, "ps": {}, "worker": {}}, "environment": "cloud"}\''.format(i, [masters[0]], workers, masters[1:])
@@ -121,6 +125,7 @@ job_instance = local_job if FLAGS.local else slurm_job
 
 
 def main(_):
+  print('Entered main')
   if FLAGS.distributed:
     jobs = create_distributed_jobs(FLAGS.job_id, is_master=True)
     jobs += create_distributed_jobs(FLAGS.job_id)
@@ -238,14 +243,14 @@ def create_distributed_jobs(job_id, is_master=False):
 
     for i in range(num_masters):
       # Build the hyperparameters for the current master node.
-      if FLAGS.async:
+      if FLAGS.asynchronous:
         print('Setting up asynchronous masters...')
         worker_job = '/job:chief' if i == 0 else '/job:worker'
       else:
         print('Setting up master...')
         worker_job = '/job:master'
       master_args = "--master=grpc://{} --ps_replicas={} --worker_replicas={} --worker_gpu=1 --worker_id={} --ps_gpu={} --worker_job={} ".format(masters[i], num_workers, num_masters, i, FLAGS.num_gpus_per_worker, worker_job)
-      if not FLAGS.async: master_args += '--sync '
+      if not FLAGS.asynchronous: master_args += '--sync '
       master_args += partial_master_args
 
       # Export TF_CONFIG.
