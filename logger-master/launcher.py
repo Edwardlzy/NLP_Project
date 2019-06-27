@@ -28,7 +28,7 @@ parser.add_argument('--cancel_all', dest='cancel_all', action='store_true')
 parser.add_argument('--cancel_confirm', dest='cancel_confirm', action='store_true')
 # Arguments for distributed training
 parser.add_argument('--distributed', dest='distributed', action='store_true')
-parser.add_argument('--master_address', type=str, default='gpu012:5555')
+parser.add_argument('--master_address', type=str, default='gpu052:5555')
 parser.add_argument('--worker_address', type=str, default='gpu042:5555,gpu045:5555', help='Comma-separated node name(s).')
 parser.add_argument('--master_args_path', type=str, default='./example_master_arguments.txt')
 parser.add_argument('--worker_args_path', type=str, default='./example_worker_arguments.txt')
@@ -228,6 +228,7 @@ def create_distributed_jobs(job_id, is_master=False):
 
   if is_master:
     # Setup TF_CONFIG first.
+    print('Running t2t-make-tf-configs...')
     cmd, job_id_str, save_dir = script_command('t2t-make-tf-configs', EXP_NAME, MAKE_TF_CONFIGS, GPU_ID_COUNT, MASTER_SLURM_CMD[0])
     print(cmd)
     jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
@@ -238,19 +239,23 @@ def create_distributed_jobs(job_id, is_master=False):
     for i in range(num_masters):
       # Build the hyperparameters for the current master node.
       if FLAGS.async:
+        print('Setting up asynchronous masters...')
         worker_job = '/job:chief' if i == 0 else '/job:worker'
       else:
+        print('Setting up master...')
         worker_job = '/job:master'
       master_args = "--master=grpc://{} --ps_replicas={} --worker_replicas={} --worker_gpu=1 --worker_id={} --ps_gpu={} --worker_job={} ".format(masters[i], num_workers, num_masters, i, FLAGS.num_gpus_per_worker, worker_job)
       if not FLAGS.async: master_args += '--sync '
       master_args += partial_master_args
 
       # Export TF_CONFIG.
+      print('Exporting TF_CONFIG...')
       cmd, job_id_str, save_dir = script_command('export', EXP_NAME, MASTER_TF_CONFIG[i], GPU_ID_COUNT, MASTER_SLURM_CMD[i], True)
       print(cmd)
       jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
 
       # Launch the master.
+      print('Launching the master...')
       cmd, job_id_str, save_dir = script_command(FLAGS.binary, EXP_NAME, master_args, GPU_ID_COUNT, MASTER_SLURM_CMD[i])
       print(cmd)
       jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))
@@ -260,6 +265,7 @@ def create_distributed_jobs(job_id, is_master=False):
       worker_args = f.read()
     for i in range(num_workers):
       # Export TF_CONFIG.
+      print('Setting up worker', workers[i])
       cmd, job_id_str, save_dir = script_command('export', EXP_NAME, WORKER_TF_CONFIG[i], GPU_ID_COUNT, WORKER_SLURM_CMD[i], True)
       print(cmd)
       jobs.append(job_instance(cmd, job_id_str, save_dir, FLAGS))

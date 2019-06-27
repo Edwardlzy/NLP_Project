@@ -1,3 +1,1 @@
---master=grpc://gpu012:5555 --ps_replicas=2 --worker_replicas=1 --worker_gpu=0 --worker_id=0 --ps_gpu=4 --sync --schedule=train_and_evaluate --worker_job='/job:master' --model=transformer --hparams_set=transformer_base --problem=translate_ende_wmt32k --data_dir=/h/edwardlzy/preparation/processed_data --output_dir=/scratch/hdd001/home/edwardlzy/transformer_experiments/test_logger/
-
 --schedule=train_and_evaluate --model=transformer --hparams_set=transformer_base --problem=translate_ende_wmt32k --data_dir=/h/edwardlzy/preparation/processed_data --output_dir=/scratch/hdd001/home/edwardlzy/transformer_experiments/test_logger/
