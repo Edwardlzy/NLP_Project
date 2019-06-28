@@ -74,7 +74,7 @@ if FLAGS.distributed:
   # Setup master(s)
   MASTER_TF_CONFIG = []
   MASTER_SLURM_CMD = []
-  ps_pattern = re.compile('\"ps.*}')
+  ps_pattern = re.compile('\"ps\":\s\w*')
   ps_str = json.dumps({"ps": workers})[1:-1]
   for i in range(num_masters):
     cur_master = masters[i].split(':')[0]
