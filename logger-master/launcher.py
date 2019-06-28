@@ -4,6 +4,7 @@ import argparse, signal, datetime
 from launcher_utils import *
 import re
 import time
+import json
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_id', type=int, default=0)
