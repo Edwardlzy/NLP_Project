@@ -257,11 +257,12 @@ def create_distributed_jobs(job_id, is_master=False):
       if FLAGS.asynchronous:
         print('Setting up asynchronous masters...')
         worker_job = '/job:chief' if i == 0 else '/job:worker'
+        master_args = "--master=grpc://{} --ps_replicas={} --worker_replicas={} --worker_gpu={} --worker_id={} --ps_gpu=0 --worker_job={} ".format(masters[i], num_workers, num_masters, FLAGS.num_gpus_per_worker, i, worker_job)
       else:
         print('Setting up master...')
         worker_job = '/job:master'
-      master_args = "--master=grpc://{} --ps_replicas={} --worker_replicas={} --worker_gpu=0 --worker_id={} --ps_gpu={} --worker_job={} ".format(masters[i], num_workers, num_masters, i, FLAGS.num_gpus_per_worker, worker_job)
-      if not FLAGS.asynchronous: master_args += '--sync '
+        master_args = "--master=grpc://{} --ps_replicas={} --worker_replicas={} --worker_gpu=0 --worker_id={} --ps_gpu={} --worker_job={} --sync ".format(masters[i], num_workers, num_masters, i, FLAGS.num_gpus_per_worker, worker_job)
+      # if not FLAGS.asynchronous: master_args += '--sync '
       master_args += partial_master_args
 
       # Export TF_CONFIG.
