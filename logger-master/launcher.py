@@ -86,7 +86,7 @@ if FLAGS.distributed:
         cur_master_tf_config = 'TF_CONFIG=\'{{"task": {{"index": 0, "type": "chief"}}, "cluster": {{"chief": ["{}"], "ps": , "worker": ["{}"]}}, "environment": "cloud"}}\''.format(masters[0], masters[1])
       else:
         cur_master_tf_config = 'TF_CONFIG=\'{{"task": {{"index": 0, "type": "worker"}}, "cluster": {{"chief": ["{}"], "ps": , "worker": ["{}"]}}, "environment": "cloud"}}\''.format(masters[0], masters[1])
-    cur_master_slurm_cmd = "srun --mem {}G --gres=gpu:1 -c {} -w {} -p {} ".format(FLAGS.master_mem, FLAGS.master_num_cpus, cur_master, get_partition(cur_master, FLAGS.is_q))
+    cur_master_slurm_cmd = "srun --mem {}G --gres=gpu:2 -c {} -w {} -p {} ".format(FLAGS.master_mem, FLAGS.master_num_cpus, cur_master, get_partition(cur_master, FLAGS.is_q))
     cur_master_tf_config = ps_pattern.sub(ps_str, cur_master_tf_config)
     MASTER_TF_CONFIG.append(cur_master_tf_config)
     MASTER_SLURM_CMD.append(cur_master_slurm_cmd)
