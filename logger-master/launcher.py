@@ -30,7 +30,7 @@ parser.add_argument('--cancel_all', dest='cancel_all', action='store_true')
 parser.add_argument('--cancel_confirm', dest='cancel_confirm', action='store_true')
 # Arguments for distributed training
 parser.add_argument('--distributed', dest='distributed', action='store_true')
-parser.add_argument('--master_address', type=str, default='gpu052:5555')
+parser.add_argument('--master_address', type=str, default='gpu031:5555,gpu043:5555')
 parser.add_argument('--worker_address', type=str, default='gpu042:5555,gpu045:5555', help='Comma-separated node name(s).')
 parser.add_argument('--master_args_path', type=str, default='./example_master_arguments.txt')
 parser.add_argument('--worker_args_path', type=str, default='./example_worker_arguments.txt')
@@ -83,9 +83,9 @@ if FLAGS.distributed:
       cur_master_tf_config = 'TF_CONFIG=\'{{"cluster": {{"master": ["{}"], "ps": }}, "environment": "cloud", "task": {{"index": {}, "type": "master"}}}}\''.format(FLAGS.master_address, i)
     else:
       if i == 0:
-        cur_master_tf_config = 'TF_CONFIG=\'{{"task": {{"index": 0, "type": "chief"}}, "cluster": {{"chief": ["{}"], "ps": , "worker": ["{}"]}}, "environment": "cloud"}}\''.format([masters[0]], masters[1])
+        cur_master_tf_config = 'TF_CONFIG=\'{{"task": {{"index": 0, "type": "chief"}}, "cluster": {{"chief": ["{}"], "ps": , "worker": ["{}"]}}, "environment": "cloud"}}\''.format(masters[0], masters[1])
       else:
-        cur_master_tf_config = 'TF_CONFIG=\'{{"task": {{"index": 0, "type": "worker"}}, "cluster": {{"chief": ["{}"], "ps": , "worker": ["{}"]}}, "environment": "cloud"}}\''.format([masters[0]], masters[1])
+        cur_master_tf_config = 'TF_CONFIG=\'{{"task": {{"index": 0, "type": "worker"}}, "cluster": {{"chief": ["{}"], "ps": , "worker": ["{}"]}}, "environment": "cloud"}}\''.format(masters[0], masters[1])
     cur_master_slurm_cmd = "srun --mem {}G --gres=gpu:1 -c {} -w {} -p {} ".format(FLAGS.master_mem, FLAGS.master_num_cpus, cur_master, get_partition(cur_master, FLAGS.is_q))
     cur_master_tf_config = ps_pattern.sub(ps_str, cur_master_tf_config)
     MASTER_TF_CONFIG.append(cur_master_tf_config)
@@ -104,7 +104,7 @@ if FLAGS.distributed:
     if not FLAGS.asynchronous:
       cur_worker_tf_config = 'TF_CONFIG=\'{{"cluster": {{"master": ["{}"], "ps": }}, "environment": "cloud", "task": {{"index": {}, "type": "ps"}}}}\''.format(FLAGS.master_address, i)
     else:
-      cur_worker_tf_config = 'TF_CONFIG=\'{{"task": {{"index": {}, "type": "ps"}}, "cluster": {{"chief": "{}", "ps": , "worker": ["{}"]}}, "environment": "cloud"}}\''.format(i, [masters[0]], masters[1])
+      cur_worker_tf_config = 'TF_CONFIG=\'{{"task": {{"index": {}, "type": "ps"}}, "cluster": {{"chief": ["{}"], "ps": , "worker": ["{}"]}}, "environment": "cloud"}}\''.format(i, masters[0], masters[1])
     cur_worker_slurm_cmd = "srun --mem {}G --gres=gpu:{} -c {} -w {} -p {} ".format(FLAGS.mem_per_worker, FLAGS.num_gpus_per_worker, FLAGS.num_cpus_per_worker, cur_worker_node, get_partition(cur_worker_node, FLAGS.is_q))
     cur_worker_tf_config = ps_pattern.sub(ps_str, cur_worker_tf_config)
     WORKER_TF_CONFIG.append(cur_worker_tf_config)
