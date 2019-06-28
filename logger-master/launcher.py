@@ -77,7 +77,7 @@ if FLAGS.distributed:
   for i in range(num_masters):
     cur_master = masters[i].split(':')[0]
     if not FLAGS.asynchronous:
-      cur_master_tf_config = 'TF_CONFIG=\'{{"cluster": {{"master": "{}", "ps": ["{}", "{}"]}}, "environment": "cloud", "task": {{"index": {}, "type": "master"}}}}\''.format(FLAGS.master_address, workers[0], workers[1], i)
+      cur_master_tf_config = 'TF_CONFIG=\'{{"cluster": {{"master": ["{}"], "ps": ["{}", "{}"]}}, "environment": "cloud", "task": {{"index": {}, "type": "master"}}}}\''.format(FLAGS.master_address, workers[0], workers[1], i)
     else:
       if i == 0:
         cur_master_tf_config = 'TF_CONFIG=\'{{"task": {{"index": 0, "type": "chief"}}, "cluster": {{"chief": "{}", "ps": {}, "worker": {}}}, "environment": "cloud"}}\''.format([masters[0]], workers, masters[1:])
@@ -128,7 +128,7 @@ job_instance = local_job if FLAGS.local else slurm_job
 def main(_):
   if FLAGS.distributed:
     jobs = create_distributed_jobs(FLAGS.job_id, is_master=True)
-    jobs = create_distributed_jobs(FLAGS.job_id)
+    jobs += create_distributed_jobs(FLAGS.job_id)
   else:
     jobs = create_jobs(FLAGS.job_id)
 
