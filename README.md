@@ -13,3 +13,6 @@ python launcher.py --distributed --submit --noautosave --master_address="gpu029:
 ```
 python launcher.py --distributed --submit --noautosave --master_address="gpu009:5555,gpu029:5555" --worker_address="gpu030:5555,gpu053:5555"
 ```
+
+#### Note
++ For asynchronous training, use "--schedule=train" to avoid graph mismatch error.
