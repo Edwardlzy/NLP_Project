@@ -20,7 +20,7 @@ python launcher.py --distributed --submit --noautosave --asynchronous --master_a
 
 ### Experiments
 #### Transformer Base on WMT14 EN-DE task
-|   | BLEU (cased) | Iterations | Average | Batch Size | Synchronous |
+|   | BLEU (uncased) | Iterations | Average | Batch Size | Synchronous |
 |---|---|---|---|---|---|
 | vanilla | 27.48 | 130K | None | 8k | Yes |
 | vanilla_avg_5k | 27.69 | 130k | every 5k steps | 8k | Yes |
