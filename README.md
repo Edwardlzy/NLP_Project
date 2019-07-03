@@ -14,6 +14,12 @@ python launcher.py --distributed --submit --noautosave --master_address="gpu029:
 python launcher.py --distributed --submit --noautosave --asynchronous --master_address="gpu009:5555,gpu029:5555" --worker_address="gpu030:5555,gpu053:5555"
 ```
 
+### Checkpoint Averaging
+```
+C=YOUR_MODEL_DIR
+srun --gres=gpu:1 -c 8 --mem=48G -p p100 python tensor2tensor/utils/avg_checkpoints.py --checkpoints="$C/model.ckpt-100000,$C/model.ckpt-95000,$C/model.ckpt-90000,$C/model.ckpt-85000,$C/model.ckpt-80000" --output_path=$C/100k_5k_avg.ckpt
+```
+
 #### Note
 + For asynchronous training, use "--schedule=train" to avoid graph mismatch error.
 
