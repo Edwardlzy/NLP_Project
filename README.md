@@ -34,6 +34,7 @@ srun --gres=gpu:1 -c 8 --mem=8G -p p100 python tensor2tensor/utils/avg_checkpoin
 | vanilla | 27.75 |  100k | None | 12k | Yes |
 | vanilla_avg_5k | 27.92 | 100k | every 5k steps | 12k | Yes |
 | vanilla_avg_1k | 27.97 | 100k | every 1k steps | 12k | Yes |
+| vanilla | 26.41 |  100k | None | 8k | No |
 
 + All scores are reported on newstest2014.
 + The averaged model from the original Transformer paper has 27.3 bleu score on newstest2014.
