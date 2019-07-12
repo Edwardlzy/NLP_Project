@@ -1,6 +1,12 @@
 # NLP_Project
 Repo for the summer at vector
 
+## Datasets
+### OpenWebText
++ Scraped from urls provided in this repo: `https://github.com/jcpeterson/openwebtext`
++ Location: `/scratch/gobi1/datasets/NLP-Corpus/OpenWebText` and `/scratch/hdd001/home/edwardlzy/openwebtext/`
++ Size: 152G
+
 ## Logger Example Usage
 + Make sure to set the training hyperparameters in example_master_arguments.txt
 
