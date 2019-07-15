@@ -30,8 +30,8 @@ parser.add_argument('--cancel_all', dest='cancel_all', action='store_true')
 parser.add_argument('--cancel_confirm', dest='cancel_confirm', action='store_true')
 # Arguments for distributed training
 parser.add_argument('--distributed', dest='distributed', action='store_true')
-parser.add_argument('--master_address', type=str, default='gpu009:5555,gpu030:5555')
-parser.add_argument('--worker_address', type=str, default='gpu054:5555,gpu053:5555', help='Comma-separated node name(s).')
+parser.add_argument('--master_address', type=str, default='gpu060:5555')
+parser.add_argument('--worker_address', type=str, default='gpu045:5555,gpu048:5555', help='Comma-separated node name(s).')
 parser.add_argument('--master_args_path', type=str, default='./example_master_arguments_async.txt')
 parser.add_argument('--worker_args_path', type=str, default='./example_worker_arguments.txt')
 parser.add_argument('--num_gpus_per_worker', type=int, default=4, help='Number of GPU per worker. (8 on q cluester, 4 on Vaughan cluster)')
@@ -86,7 +86,7 @@ if FLAGS.distributed:
         cur_master_tf_config = 'TF_CONFIG=\'{{"task": {{"index": 0, "type": "chief"}}, "cluster": {{"chief": ["{}"], "ps": , "worker": ["{}"]}}, "environment": "cloud"}}\''.format(masters[0], masters[1])
       else:
         cur_master_tf_config = 'TF_CONFIG=\'{{"task": {{"index": 0, "type": "worker"}}, "cluster": {{"chief": ["{}"], "ps": , "worker": ["{}"]}}, "environment": "cloud"}}\''.format(masters[0], masters[1])
-    cur_master_slurm_cmd = "srun --mem {}G --gres=gpu:2 -c {} -w {} -p {} ".format(FLAGS.master_mem, FLAGS.master_num_cpus, cur_master, get_partition(cur_master, FLAGS.is_q))
+    cur_master_slurm_cmd = "srun --mem {}G --gres=gpu:1 -c {} -w {} -p {} ".format(FLAGS.master_mem, FLAGS.master_num_cpus, cur_master, get_partition(cur_master, FLAGS.is_q))
     cur_master_tf_config = ps_pattern.sub(ps_str, cur_master_tf_config)
     MASTER_TF_CONFIG.append(cur_master_tf_config)
     MASTER_SLURM_CMD.append(cur_master_slurm_cmd)
@@ -257,7 +257,7 @@ def create_distributed_jobs(job_id, is_master=False):
       if FLAGS.asynchronous:
         print('Setting up asynchronous masters...')
         worker_job = '/job:chief' if i == 0 else '/job:worker'
-        master_args = "--master=grpc://{} --ps_replicas={} --worker_replicas={} --worker_gpu={} --worker_id={} --ps_gpu=0 --worker_job={} ".format(masters[i], num_workers, num_masters, FLAGS.num_gpus_per_worker, i, worker_job)
+        master_args = "--master=grpc://{} --ps_replicas={} --worker_replicas={} --worker_gpu={} --worker_id={} --ps_gpu=4 --worker_job={} ".format(masters[i], num_workers, num_masters, FLAGS.num_gpus_per_worker, i, worker_job)
       else:
         print('Setting up master...')
         worker_job = '/job:master'
