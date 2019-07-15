@@ -83,5 +83,6 @@ class LanguagemodelOpenWebText(text_problems.Text2SelfProblem):
       tf.logging.info("filepath = %s", filepath)
       for line in tf.gfile.Open(filepath):
         # txt = _replace_oov(original_vocab, text_encoder.native_to_unicode(line))
-        encoded_txt = byte_pair_encoder.encode(line)
-        yield {"targets": encoded_txt}
+        if line != '\n':
+          encoded_txt = byte_pair_encoder.encode(line)
+          yield {"targets": encoded_txt}
