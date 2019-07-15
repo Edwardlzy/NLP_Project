@@ -34,10 +34,6 @@ import numpy as np
 import six
 from six.moves import range  # pylint: disable=redefined-builtin
 from tensor2tensor.data_generators import tokenizer
-import regex
-import json
-from functools import lru_cache
-import os
 
 import tensorflow as tf
 
@@ -108,42 +104,6 @@ def strip_ids(ids, ids_to_strip):
   return ids
 
 
-# GPT-2 required helper functions.
-@lru_cache()
-def bytes_to_unicode():
-    """
-    Returns list of utf-8 byte and a corresponding list of unicode strings.
-    The reversible bpe codes work on unicode strings.
-    This means you need a large # of unicode characters in your vocab if you want to avoid UNKs.
-    When you're at something like a 10B token dataset you end up needing around 5K for decent coverage.
-    This is a signficant percentage of your normal, say, 32K bpe vocab.
-    To avoid that, we want lookup tables between utf-8 bytes and unicode strings.
-    And avoids mapping to whitespace/control characters the bpe code barfs on.
-    """
-    bs = list(range(ord("!"), ord("~")+1))+list(range(ord("¡"), ord("¬")+1))+list(range(ord("®"), ord("ÿ")+1))
-    cs = bs[:]
-    n = 0
-    for b in range(2**8):
-        if b not in bs:
-            bs.append(b)
-            cs.append(2**8+n)
-            n += 1
-    cs = [chr(n) for n in cs]
-    return dict(zip(bs, cs))
-
-
-def get_pairs(word):
-    """Return set of symbol pairs in a word.
-    Word is represented as tuple of symbols (symbols being variable-length strings).
-    """
-    pairs = set()
-    prev_char = word[0]
-    for char in word[1:]:
-        pairs.add((prev_char, char))
-        prev_char = char
-    return pairs
-
-
 class TextEncoder(object):
   """Base class for converting from ints to/from human readable strings."""
 
@@ -188,7 +148,7 @@ class TextEncoder(object):
     return " ".join(self.decode_list(ids))
 
   def decode_list(self, ids):
-    """Transform a sequence of int ids into their string versions.
+    """Transform a sequence of int ids into a their string versions.
 
     This method supports transforming individual input/output ids to their
     string versions so that sequence to/from text conversions can be visualized
@@ -256,84 +216,6 @@ class ByteTextEncoder(TextEncoder):
   @property
   def vocab_size(self):
     return 2**8 + self._num_reserved_ids
-
-
-class BytePairEncoder(TextEncoder):
-  """Encode each byte into an id following the convention defined by GPT2."""
-  def __init__(self, encoder_path, vocab_path, errors='replace'):
-    # super(BytePairEncoder, self).__init__()
-    with open(encoder_path, 'r') as f:
-      self.encoder = json.load(encoder_path)  # A lookup table for byte -> int.
-    with open(vocab_path, 'r', encoding="utf-8") as f:
-      self.bpe_merges = f.read()
-    self.bpe_merges = [tuple(merge_str.split()) for merge_str in self.bpe_merges.split('\n')[1:-1]]
-    self.decoder = {v:k for k,v in self.encoder.items()}
-    self.errors = errors
-    self.byte_encoder = bytes_to_unicode()
-    self.byte_decoder = {v:k for k, v in self.byte_encoder.items()}
-    self.bpe_ranks = dict(zip(bpe_merges, range(len(bpe_merges))))
-    self.cache = {}
-    # Regex for splitting the text into list of tokens.
-    self.pat = regex.compile(r"""'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+""")
-
-  def bpe(self, token):
-    """Translate the given token (unicode) to index in the encoder file."""
-    if token in self.cache: return self.cache[token]
-    word = tuple(token)
-    pairs = get_pairs(word)
-
-    if not pairs: return token
-
-    while True:
-      bigram = min(pairs, key = lambda pair: self.bpe_ranks.get(pair, float('inf')))
-      if bigram not in self.bpe_ranks:
-        break
-      first, second = bigram
-      new_word = []
-      i = 0
-      while i < len(word):
-        try:
-          j = word.index(first, i)
-          new_word.extend(word[i:j])
-          i = j
-        except:
-          new_word.extend(word[i:])
-          break
-
-        if word[i] == first and i < len(word)-1 and word[i+1] == second:
-          new_word.append(first+second)
-          i += 2
-        else:
-          new_word.append(word[i])
-          i += 1
-      new_word = tuple(new_word)
-      word = new_word
-      if len(word) == 1:
-        break
-      else:
-        pairs = get_pairs(word)
-    word = ' '.join(word)
-    self.cache[token] = word
-    return word
-
-  def encode(self, text):
-    """Encode the text into a list of indices."""
-    bpe_tokens = []
-    for token in regex.findall(self.pat, text):
-      token = ''.join(self.byte_encoder[b] for b in token.encode('utf-8'))
-      bpe_tokens.extend(self.encoder[bpe_token] for bpe_token in self.bpe(token).split(' '))
-    return bpe_tokens
-
-  def decode(self, tokens, strip_extraneous=False):
-    """Decode the tokens into human-readable text. strip_extraneous flag not used."""
-    text = ''.join([self.decoder[token] for token in tokens])
-    text = bytearray([self.byte_decoder[c] for c in text]).decode('utf-8', errors=self.errors)
-    return text
-
-  def decode_list(self, ids):
-    text = ''.join([self.decoder[token] for token in tokens])
-    text = [six.int2byte(self.byte_decoder[c]).decode('utf-8', errors=self.errors) for c in text]
-    return text
 
 
 class ClassLabelEncoder(TextEncoder):
