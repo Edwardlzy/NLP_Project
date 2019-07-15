@@ -47,6 +47,7 @@ class VocabType(object):
   CHARACTER = "character"
   SUBWORD = "subwords"
   TOKEN = "tokens"
+  BYTE_PAIR = 'byte_pair'
 
 
 class Text2TextProblem(problem.Problem):
@@ -220,6 +221,9 @@ class Text2TextProblem(problem.Problem):
       return "vocab.%s.%d.%s" % (self.dataset_filename(),
                                  self.approx_vocab_size,
                                  VocabType.SUBWORD)
+    elif self.vocab_type == VocabType.BYTE_PAIR:
+      # return "vocab.%s.%s" % (self.dataset_filename(), VocabType.BYTE_PAIR)
+      return "vocab.bpe"
     else:
       return "vocab.%s.%s" % (self.dataset_filename(), VocabType.TOKEN)
 
@@ -256,6 +260,9 @@ class Text2TextProblem(problem.Problem):
       vocab_filename = os.path.join(data_dir, self.vocab_filename)
       encoder = text_encoder.TokenTextEncoder(vocab_filename,
                                               replace_oov=self.oov_token)
+    elif self.vocab_type == VocabType.BYTE_PAIR:
+      # encoder_path, vocab_path
+      encoder = text_encoder.BytePairEncoder(os.path.join(data_dir, 'encoder.json'), os.path.join(data_dir, self.vocab_filename))
     else:
       raise ValueError(
           "Unrecognized VocabType: %s" % str(self.vocab_type))
