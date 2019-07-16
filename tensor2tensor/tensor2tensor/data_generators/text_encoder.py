@@ -262,8 +262,9 @@ class BytePairEncoder(TextEncoder):
   """Encode each byte into an id following the convention defined by GPT2."""
   def __init__(self, encoder_path, vocab_path, errors='replace'):
     # super(BytePairEncoder, self).__init__()
+    EOS_ID = ''
     with open(encoder_path, 'r') as f:
-      self.encoder = json.load(encoder_path)  # A lookup table for byte -> int.
+      self.encoder = json.load(f)  # A lookup table for byte -> int.
     with open(vocab_path, 'r', encoding="utf-8") as f:
       self.bpe_merges = f.read()
     self.bpe_merges = [tuple(merge_str.split()) for merge_str in self.bpe_merges.split('\n')[1:-1]]
@@ -271,7 +272,7 @@ class BytePairEncoder(TextEncoder):
     self.errors = errors
     self.byte_encoder = bytes_to_unicode()
     self.byte_decoder = {v:k for k, v in self.byte_encoder.items()}
-    self.bpe_ranks = dict(zip(bpe_merges, range(len(bpe_merges))))
+    self.bpe_ranks = dict(zip(self.bpe_merges, range(len(self.bpe_merges))))
     self.cache = {}
     # Regex for splitting the text into list of tokens.
     self.pat = regex.compile(r"""'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+""")

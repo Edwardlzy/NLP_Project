@@ -38,6 +38,8 @@ tf.flags.DEFINE_string("token_text_encoder_filename", "",
                        "TokenTextEncoder vocabulary file")
 tf.flags.DEFINE_bool("byte_text_encoder", False, "use a ByteTextEncoder")
 tf.flags.DEFINE_bool("byte_pair_encoder", False, "use a BytePairEncoder")
+tf.flags.DEFINE_string("bpe_encoder_file", "", "Byte Pair Encoding file")
+tf.flags.DEFINE_string("bpe_vocab_file", "", "Byte Pair Encoding file")
 tf.flags.DEFINE_string("input_filename", "", "input filename")
 tf.flags.DEFINE_bool("print_inputs", False, "Print decoded inputs to stdout")
 tf.flags.DEFINE_bool("print_targets", False, "Print decoded targets to stdout")
@@ -56,7 +58,7 @@ def main(_):
   elif FLAGS.byte_text_encoder:
     encoder = text_encoder.ByteTextEncoder()
   elif FLAGS.byte_pair_encoder:
-    encoder = text_encoder.BytePairEncoder()
+    encoder = text_encoder.BytePairEncoder(FLAGS.bpe_encoder_file, FLAGS.bpe_vocab_file)
   else:
     encoder = None
   reader = tf.python_io.tf_record_iterator(FLAGS.input_filename)
