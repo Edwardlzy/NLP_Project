@@ -38,6 +38,28 @@ inputs: []
 targets: [1, 1537, 790, 1110, 15687, 326, 428, 2099, 286, 1337, 460, 290, 1276, 307, 2810, 526, 198, 1]
 ```
 
+### Byte Pair Encoding
++ Intuition: <br />
+Leverage the benefits of both word-level and character-level language modeling by interpolating word-level inputs for frequent symbol sequences and char-level inputs for infrequent symbol sequences.
+```
+Prerequisite: 
+  encoder.json: unicode word to index lookup table.
+  vocab.bpe: A vocabulary which each word is splitted into 2 unicode strings.
+
+Workflow:
+- Plain text
+- Split the input to a list of words
+- For each char in each word, convert to unicode char
+- For each converted unicode word, starting at char (byte) level, iteratively combine bigrams until the new word is not found in vocab.bpe
+- Return a list of indices of the words generated from the previous step
+
+Toy Example:
+- "Hello world!"
+- ["Hello", "world", "!"]
+- [b'Hello', b' world', b'!'] -> ['Hello', 'Ġworld', '!']
+- [15496, 995, 0]
+```
+
 ## Logger Example Usage
 + Make sure to set the training hyperparameters in example_master_arguments.txt
 
