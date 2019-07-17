@@ -65,13 +65,13 @@ srun --gres=gpu:1 -c 8 --mem=8G -p p100 python tensor2tensor/utils/avg_checkpoin
 #### Transformer Base on WMT14 EN-DE task
 |   | BLEU (uncased) | Iterations | Average | Batch Size | Synchronous |
 |---|---|---|---|---|---|
-| vanilla | 27.48 | 130K | None | 8k | Yes |
-| vanilla_avg_5k | 27.69 | 130k | every 5k steps | 8k | Yes |
-| vanilla_avg_1k | 27.71 | 130k | every 1k steps | 8k | Yes |
-| vanilla | 27.75 |  100k | None | 12k | Yes |
-| vanilla_avg_5k | 27.92 | 100k | every 5k steps | 12k | Yes |
-| vanilla_avg_1k | 27.97 | 100k | every 1k steps | 12k | Yes |
-| vanilla | 26.41 |  100k | None | 8k | No |
+| vanilla | 27.48 | 130K | None | 32k | Yes |
+| vanilla_avg_5k | 27.69 | 130k | every 5k steps | 32k | Yes |
+| vanilla_avg_1k | 27.71 | 130k | every 1k steps | 32k | Yes |
+| vanilla | 27.75 |  100k | None | 48k | Yes |
+| vanilla_avg_5k | 27.92 | 100k | every 5k steps | 48k | Yes |
+| vanilla_avg_1k | 27.97 | 100k | every 1k steps | 48k | Yes |
+| vanilla | 26.41 |  100k | None | 32k | No |
 
 + All scores are reported on newstest2014.
 + The averaged model from the original Transformer paper has 27.3 bleu score on newstest2014.
