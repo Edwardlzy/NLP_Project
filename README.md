@@ -56,7 +56,8 @@ Workflow:
 Toy Example:
 - "Hello world!"
 - ["Hello", "world", "!"]
-- [b'Hello', b' world', b'!'] -> ['Hello', 'Ġworld', '!']
+- [b'Hello', b' world', b'!']
+- ['Hello', 'Ġworld', '!']
 - [15496, 995, 0]
 ```
 
