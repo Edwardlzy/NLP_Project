@@ -24,6 +24,7 @@ def train_dev_split(tmp_dir, split, ratio=0.9):
   """Split the data into training and validation set."""
   global split_files
   if not split_files:
+    tf.logging.info("Generating train_val split...")
     dataset_filenames = glob.glob(os.path.join(tmp_dir, '*', '*.txt'))
     random.shuffle(dataset_filenames)
     training_num = round(len(dataset_filenames) * 0.9)
