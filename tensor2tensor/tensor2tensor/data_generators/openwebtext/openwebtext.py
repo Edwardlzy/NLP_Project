@@ -102,6 +102,5 @@ class LanguagemodelOpenWebText(text_problems.Text2SelfProblem):
       for line in tf.gfile.Open(filepath):
         # txt = _replace_oov(original_vocab, text_encoder.native_to_unicode(line))
         if line != '\n':
-          #encoded_txt = byte_pair_encoder.encode(line)
           encoded_txt = line
           yield {"targets": encoded_txt}

@@ -262,6 +262,7 @@ class BytePairEncoder(TextEncoder):
   """Encode each byte into an id following the convention defined by GPT2."""
   def __init__(self, encoder_path, vocab_path, errors='replace'):
     # super(BytePairEncoder, self).__init__()
+    global EOS_ID
     EOS_ID = ''
     with open(encoder_path, 'r') as f:
       self.encoder = json.load(f)  # A lookup table for byte -> int.
