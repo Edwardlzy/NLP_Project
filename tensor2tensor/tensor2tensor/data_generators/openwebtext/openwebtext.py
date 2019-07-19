@@ -72,6 +72,17 @@ class LanguagemodelOpenWebText(text_problems.Text2SelfProblem):
   #   return 50256
 
   @property
+  def dataset_splits(self):
+    """Splits of data to produce and number of output shards for each."""
+    return [{
+        "split": problem.DatasetSplit.TRAIN,
+        "shards": 512,
+    }, {
+        "split": problem.DatasetSplit.EVAL,
+        "shards": 128,
+    }]
+
+  @property
   def vocab_type(self):
     return text_problems.VocabType.BYTE_PAIR
 
