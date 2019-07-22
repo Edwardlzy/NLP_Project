@@ -337,6 +337,10 @@ class BytePairEncoder(TextEncoder):
     text = [six.int2byte(self.byte_decoder[c]).decode('utf-8', errors=self.errors) for c in text]
     return text
 
+  @property
+  def vocab_size(self):
+    return 50000
+
 
 class ClassLabelEncoder(TextEncoder):
   """Encoder for class labels."""
