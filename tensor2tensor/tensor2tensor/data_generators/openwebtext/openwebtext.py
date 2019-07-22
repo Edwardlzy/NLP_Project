@@ -9,6 +9,7 @@ import tarfile
 from six.moves import range  # pylint: disable=redefined-builtin
 import glob
 import random
+import traceback
 
 from tensor2tensor.data_generators import generator_utils
 from tensor2tensor.data_generators import problem
@@ -105,13 +106,17 @@ class LanguagemodelOpenWebText(text_problems.Text2SelfProblem):
     # original_vocab = _original_vocab(tmp_dir)
 
     # Load the byte_pair_encoder.
-    byte_pair_encoder = text_encoder.BytePairEncoder(os.path.join(data_dir, 'encoder.json'), os.path.join(data_dir, 'vocab.bpe'))
+    # byte_pair_encoder = text_encoder.BytePairEncoder(os.path.join(data_dir, 'encoder.json'), os.path.join(data_dir, 'vocab.bpe'))
     files = train_dev_split(tmp_dir, dataset_split)
     # files = split_files[dataset_split]
     for filepath in files:
       tf.logging.info("filepath = %s", filepath)
-      for line in tf.gfile.Open(filepath):
-        # txt = _replace_oov(original_vocab, text_encoder.native_to_unicode(line))
-        if line != '\n':
-          encoded_txt = line
-          yield {"targets": encoded_txt}
+      try:
+        for line in tf.gfile.Open(filepath):
+          # txt = _replace_oov(original_vocab, text_encoder.native_to_unicode(line))
+          if line != '\n':
+            encoded_txt = line
+            yield {"targets": encoded_txt}
+      except Exception:
+        traceback.print_exc()
+        continue
