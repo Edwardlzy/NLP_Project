@@ -721,7 +721,6 @@ def text2text_generate_encoded(sample_generator,
       sample["inputs"] = vocab.encode(inputs_prefix + sample["inputs"])
       sample["inputs"].append(text_encoder.EOS_ID)
     sample["targets"] = targets_vocab.encode(targets_prefix + sample["targets"])
-    tf.logging.info('sample = %s', sample)
     if text_encoder.EOS_ID == 1:
       sample["targets"].append(text_encoder.EOS_ID)
     yield sample
