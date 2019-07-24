@@ -21,7 +21,7 @@ import tensorflow as tf
 
 split_files = None
 
-def train_dev_split(tmp_dir, split, ratio=0.9):
+def train_dev_split(tmp_dir, split, ratio=0.9, percentage=0.5):
   """Split the data into training and validation set."""
   global split_files
   if not split_files:
@@ -29,6 +29,8 @@ def train_dev_split(tmp_dir, split, ratio=0.9):
       tf.logging.info("Loading pre-generated splits...")
       f = open(os.path.join(tmp_dir, 'training_set.txt'), 'r')
       _train_data_filenames = f.read().split('\n')
+      tf.logging.info("Using %d out of %d files.", round(len(_train_data_filenames) * percentage), len(_train_data_filenames))
+      _train_data_filenames = _train_data_filenames[:round(len(_train_data_filenames) * percentage)]
       f = open(os.path.join(tmp_dir, 'val_set.txt'), 'r')
       _dev_data_filenames = f.read().split('\n')
     else:
