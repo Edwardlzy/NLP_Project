@@ -110,8 +110,12 @@ srun --gres=gpu:1 -c 8 --mem=8G -p p100 python tensor2tensor/utils/avg_checkpoin
 + The averaged model from the original Transformer paper has 27.3 bleu score on newstest2014.
 
 #### LM1B 
-|   | Perplexity | Iterations | Encoding | Training Data |
+| Model | Perplexity | Iterations | Encoding | Training Data |
 |---|---|---|---|---|
 | Transformer Base | 42.50 | 250K | SubwordTextEncoder | LM1B Training Set |
 | Transformer Base | 140.70 | 250K | BytePairEncoder | OpenWebText |
+| Transformer Base |   | 250K | BytePairEncoder | LM1B Training Set|
+| Transformer Big |   | 250K | BytePairEncoder | OpenWebText|
+| Transformer Big |   | 250K | SubwordTextEncoder | LM1B Training Set |
 
++ Perplexity is reported on LM1B dev set.
