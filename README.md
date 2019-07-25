@@ -112,6 +112,6 @@ srun --gres=gpu:1 -c 8 --mem=8G -p p100 python tensor2tensor/utils/avg_checkpoin
 #### LM1B 
 |   | Perplexity | Iterations | Encoding | Training Data |
 |---|---|---|---|---|
-| Transformer Base | 43.24 | 210K | SubwordTextEncoder | LM1B Training Set |
+| Transformer Base | 42.50 | 250K | SubwordTextEncoder | LM1B Training Set |
 | Transformer Base | 140.70 | 250K | BytePairEncoder | OpenWebText |
 
