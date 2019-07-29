@@ -21,16 +21,25 @@ import tensorflow as tf
 
 split_files = None
 
-def train_dev_split(tmp_dir, split, ratio=0.9):
+def train_dev_split(tmp_dir, split, ratio=0.9, percentage=0.5):
   """Split the data into training and validation set."""
   global split_files
   if not split_files:
-    tf.logging.info("Generating train_val split...")
-    dataset_filenames = glob.glob(os.path.join(tmp_dir, '*', '*.txt'))
-    random.shuffle(dataset_filenames)
-    training_num = round(len(dataset_filenames) * 0.9)
-    _train_data_filenames = dataset_filenames[:training_num]
-    _dev_data_filenames = dataset_filenames[training_num:]
+    if os.path.isfile(os.path.join(tmp_dir, 'training_set.txt')) and os.path.isfile(os.path.join(tmp_dir, 'val_set.txt')):
+      tf.logging.info("Loading pre-generated splits...")
+      f = open(os.path.join(tmp_dir, 'training_set.txt'), 'r')
+      _train_data_filenames = f.read().split('\n')
+      tf.logging.info("Using %d out of %d files.", round(len(_train_data_filenames) * percentage), len(_train_data_filenames))
+      _train_data_filenames = _train_data_filenames[:round(len(_train_data_filenames) * percentage)]
+      f = open(os.path.join(tmp_dir, 'val_set.txt'), 'r')
+      _dev_data_filenames = f.read().split('\n')
+    else:
+      tf.logging.info("Generating train_val split...")
+      dataset_filenames = glob.glob(os.path.join(tmp_dir, '*', '*.txt'))
+      random.shuffle(dataset_filenames)
+      training_num = round(len(dataset_filenames) * 0.9)
+      _train_data_filenames = dataset_filenames[:training_num]
+      _dev_data_filenames = dataset_filenames[training_num:]
     split_files = {
         problem.DatasetSplit.TRAIN: _train_data_filenames,
         problem.DatasetSplit.EVAL: _dev_data_filenames,
@@ -80,7 +89,7 @@ class LanguagemodelOpenWebText(text_problems.Text2SelfProblem):
         "shards": 512,
     }, {
         "split": problem.DatasetSplit.EVAL,
-        "shards": 128,
+        "shards": 32,
     }]
 
   @property

@@ -61,6 +61,16 @@ Toy Example:
 - [15496, 995, 0]
 ```
 
+## T2T Example Commands
+### Language Modeling Training
+```
+srun --gres=gpu:4 -c 32 -p p100 --mem=64G -w gpu033 t2t-trainer --data_dir=/scratch/hdd001/home/edwardlzy/openwebtext/tfrecords/ --problem=languagemodel_open_web_text --model=transformer --hparams_set=transformer_base --output_dir=/scratch/hdd001/home/edwardlzy/lm_openwebtext_train/ --t2t_usr_dir=/h/edwardlzy/NLP_Project/tensor2tensor/tensor2tensor/data_generators/openwebtext/ --schedule=train
+```
+### Interactive Decoding
+```
+srun --gres=gpu:1 -c 16 --mem=16G -p p100 t2t-decoder --data_dir=/scratch/hdd001/home/edwardlzy/openwebtext/tfrecords/ --tmp_dir=/scratch/hdd001/home/edwardlzy/openwebtext/text_data/ --problem=languagemodel_open_web_text --model=transformer --hparams_set=transformer_base --decode_hparams="beam_size=4,alpha=0.6" --decode_interactive --output_dir=/scratch/hdd001/home/edwardlzy/lm_openwebtext_train --t2t_usr_dir=/h/edwardlzy/NLP_Project/tensor2tensor/tensor2tensor/data_generators/openwebtext/
+```
+
 ## Logger Example Usage
 + Make sure to set the training hyperparameters in example_master_arguments.txt
 
@@ -98,3 +108,14 @@ srun --gres=gpu:1 -c 8 --mem=8G -p p100 python tensor2tensor/utils/avg_checkpoin
 
 + All scores are reported on newstest2014.
 + The averaged model from the original Transformer paper has 27.3 bleu score on newstest2014.
+
+#### LM1B 
+| Model | Perplexity | Iterations | Encoding | Training Data |
+|---|---|---|---|---|
+| Transformer Base | 42.50 | 250K | SubwordTextEncoder | LM1B Training Set |
+| Transformer Base | 140.70 | 250K | BytePairEncoder | OpenWebText |
+| Transformer Base | 43.68 | 250K | BytePairEncoder | LM1B Training Set|
+| Transformer Big | 152.70  | 250K | BytePairEncoder | OpenWebText|
+| Transformer Big | 44.08 | 250K | SubwordTextEncoder | LM1B Training Set |
+
++ Perplexity is reported on LM1B dev set.
