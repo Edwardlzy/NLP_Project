@@ -17,8 +17,9 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-import numpy as np
 
+import os
+import numpy as np
 from tensor2tensor.layers import common_layers
 from tensor2tensor.utils import adafactor as adafactor_lib
 from tensor2tensor.utils import misc_utils
@@ -26,7 +27,6 @@ from tensor2tensor.utils import mlperf_log
 from tensor2tensor.utils import multistep_optimizer
 from tensor2tensor.utils import registry
 from tensor2tensor.utils import yellowfin
-from tensor2tensor.utils import lookahead_tensorflow as lookahead
 
 import tensorflow as tf
 
@@ -41,7 +41,12 @@ def _mixed_precision_is_enabled(hparams):
   return activation_dtype == tf.float16 and weight_dtype == tf.float32
 
 
-def optimize(loss, learning_rate, hparams, use_tpu=False, variables=None):
+def optimize(loss,
+             learning_rate,
+             hparams,
+             use_tpu=False,
+             variables=None,
+             gpu_auto_mixed_precision=False):
   """Minimize loss."""
   loss = weight_decay_and_noise(loss, hparams, learning_rate)
   loss = tf.identity(loss, name="total_loss")
@@ -66,6 +71,18 @@ def optimize(loss, learning_rate, hparams, use_tpu=False, variables=None):
   opt = ConditionalOptimizer(hparams.optimizer, learning_rate, hparams, use_tpu)
   if use_tpu:
     opt = tf.contrib.tpu.CrossShardOptimizer(opt)
+  if gpu_auto_mixed_precision or os.environ.get(
+      "TF_ENABLE_AUTO_MIXED_PRECISION", "0") == "1":
+    if use_tpu:
+      raise RuntimeError("GPU auto mixed precision cannot be used with TPU")
+    elif _mixed_precision_is_enabled(hparams):
+      raise RuntimeError(
+          "GPU auto mixed precision cannot be used with manual mixed precision")
+    else:
+      setattr(opt, "_use_locking", "True")
+      setattr(opt, "_name", "ConditionalOptimizer")
+      opt = tf.train.experimental.enable_mixed_precision_graph_rewrite(opt)
+
   opt_summaries = []
   if common_layers.should_generate_summaries():
     tf.summary.scalar("learning_rate", learning_rate)
@@ -93,13 +110,6 @@ def optimize(loss, learning_rate, hparams, use_tpu=False, variables=None):
       colocate_gradients_with_ops=True,
       variables=variables)
   return train_op
-
-
-@registry.register_optimizer
-def lookahead(learning_rate, hparams):
-  """By default, use LA_Adam with la_steps=5 and la_alpha=0.5."""
-  optim = adam(learning_rate, hparams)
-  return lookahead.LookaheadOptimizer(optim, 5)
 
 
 @registry.register_optimizer
@@ -371,3 +381,11 @@ def get_variable_initializer(hparams):
     return tf.random_uniform_initializer(-max_val, max_val)
   elif hparams.initializer == "normal_unit_scaling":
     return tf.variance_scaling_initializer(
+        hparams.initializer_gain, mode="fan_avg", distribution="normal")
+  elif hparams.initializer == "uniform_unit_scaling":
+    return tf.variance_scaling_initializer(
+        hparams.initializer_gain, mode="fan_avg", distribution="uniform")
+  elif hparams.initializer == "xavier":
+    return tf.initializers.glorot_uniform()
+  else:
+    raise ValueError("Unrecognized initializer: %s" % hparams.initializer)
