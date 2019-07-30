@@ -16,7 +16,7 @@ from tensor2tensor.data_generators import problem
 from tensor2tensor.data_generators import text_encoder
 from tensor2tensor.data_generators import text_problems
 from tensor2tensor.utils import registry
-from tensor2tensor.utils import lookahead_tensorflow as lookahead
+from . import lookahead_tensorflow as lookahead_tf
 
 import tensorflow as tf
 
@@ -28,7 +28,7 @@ def lookahead(learning_rate, hparams):
             beta1=hparams.optimizer_adam_beta1,
             beta2=hparams.optimizer_adam_beta2,
             epsilon=hparams.optimizer_adam_epsilon)
-  return lookahead.LookaheadOptimizer(optim, 5)
+  return lookahead_tf.LookaheadOptimizer(optim, 5)
 
 
 split_files = None
