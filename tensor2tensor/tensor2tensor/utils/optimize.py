@@ -26,6 +26,7 @@ from tensor2tensor.utils import mlperf_log
 from tensor2tensor.utils import multistep_optimizer
 from tensor2tensor.utils import registry
 from tensor2tensor.utils import yellowfin
+from tensor2tensor.utils import lookahead_tensorflow as lookahead
 
 import tensorflow as tf
 
@@ -92,6 +93,13 @@ def optimize(loss, learning_rate, hparams, use_tpu=False, variables=None):
       colocate_gradients_with_ops=True,
       variables=variables)
   return train_op
+
+
+@registry.register_optimizer
+def lookahead(learning_rate, hparams):
+  """By default, use LA_Adam with la_steps=5 and la_alpha=0.5."""
+  optim = adam(learning_rate, hparams)
+  return lookahead.LookaheadOptimizer(optim, 5)
 
 
 @registry.register_optimizer
@@ -363,11 +371,3 @@ def get_variable_initializer(hparams):
     return tf.random_uniform_initializer(-max_val, max_val)
   elif hparams.initializer == "normal_unit_scaling":
     return tf.variance_scaling_initializer(
-        hparams.initializer_gain, mode="fan_avg", distribution="normal")
-  elif hparams.initializer == "uniform_unit_scaling":
-    return tf.variance_scaling_initializer(
-        hparams.initializer_gain, mode="fan_avg", distribution="uniform")
-  elif hparams.initializer == "xavier":
-    return tf.initializers.glorot_uniform()
-  else:
-    raise ValueError("Unrecognized initializer: %s" % hparams.initializer)
