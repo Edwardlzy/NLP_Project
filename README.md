@@ -110,12 +110,14 @@ srun --gres=gpu:1 -c 8 --mem=8G -p p100 python tensor2tensor/utils/avg_checkpoin
 + The averaged model from the original Transformer paper has 27.3 bleu score on newstest2014.
 
 #### LM1B 
-| Model | Perplexity | Iterations | Encoding | Training Data |
-|---|---|---|---|---|
-| Transformer Base | 42.50 | 250K | SubwordTextEncoder | LM1B Training Set |
-| Transformer Base | 140.70 | 250K | BytePairEncoder | OpenWebText |
-| Transformer Base | 43.68 | 250K | BytePairEncoder | LM1B Training Set|
-| Transformer Big | 152.70  | 250K | BytePairEncoder | OpenWebText|
-| Transformer Big | 44.08 | 250K | SubwordTextEncoder | LM1B Training Set |
+| Model | Perplexity | Iterations | Encoding | Training Data | Optimizer | Batch Size |
+|---|---|---|---|---|---|---|
+| transformer_base | 42.50 | 250K | SubwordTextEncoder | LM1B Training Set | Adam | 16K |
+| transformer_base | 140.70 | 250K | BytePairEncoder | OpenWebText | Adam | 16K |
+| transformer_base | 43.68 | 250K | BytePairEncoder | LM1B Training Set| Adam | 16K |
+| transformer_big | 152.70  | 250K | BytePairEncoder | OpenWebText| Adam | 16K |
+| transformer_big | 44.08 | 250K | SubwordTextEncoder | LM1B Training Set | Adam | 16K |
+| transformer_lm_tpu_0 | 31.48 | 250K | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 |  | 250K | BytePairEncoder | LM1B Training Set | Adam | 16K |
 
 + Perplexity is reported on LM1B dev set.
