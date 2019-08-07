@@ -118,8 +118,12 @@ srun --gres=gpu:1 -c 8 --mem=8G -p p100 python tensor2tensor/utils/avg_checkpoin
 | transformer_big | 152.70  | 250K | BytePairEncoder | OpenWebText| Adam | 16K |
 | transformer_big | 44.08 | 250K | SubwordTextEncoder | LM1B Training Set | Adam | 16K |
 | transformer_lm_tpu_0 | 31.48 | 250K | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 | 30.18 | Avg_1K | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 | 29.75 | Avg_5K | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
 | transformer_lm_tpu_0 | 31.72 | 250K | SubwordTextEncoder | 50% of LM1B Training Set | Adafactor | 16K |
 | transformer_lm_tpu_0 | 40.44 | 250K | BytePairEncoder | LM1B Training Set | Adam | 16K |
+| transformer_lm_tpu_0 | 38.91 | Avg_1K | BytePairEncoder | LM1B Training Set | Adam | 16K |
+| transformer_lm_tpu_0 | 38.81 | Avg_5K | BytePairEncoder | LM1B Training Set | Adam | 16K |
 | transformer_lm_tpu_0 | 41.05 | 250K | BytePairEncoder | LM1B Training Set | Lookahead_Adam | 4K |
 | transformer_lm_tpu_0 | 40.89 | 250K | BytePairEncoder | LM1B Training Set | Lookahead_Adam | 16K |
 
