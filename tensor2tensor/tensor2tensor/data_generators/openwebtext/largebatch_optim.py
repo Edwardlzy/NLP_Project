@@ -118,7 +118,7 @@ class LargebatchOptimizer(optimizer.Optimizer):
         condition = tf.greater_equal(update_step, self._update_steps_t)
         update_params_states = tf.cond( condition,
                                         update_grad,
-                                        accumulated_grad,
+                                        accumulate_grad,
                                       )
     return control_flow_ops.group([update_params_states])
 
