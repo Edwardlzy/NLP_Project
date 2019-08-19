@@ -263,3 +263,4 @@ class LargebatchOptimizer(optimizer.Optimizer):
   #      with ops.control_dependencies([self._finish(update_ops, "update")]):
   #        with ops.colocate_with(global_step):
   #          return state_ops.assign_add(global_step, 1, name=name).op
+
