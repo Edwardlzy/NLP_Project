@@ -22,13 +22,13 @@ import tensorflow as tf
 
 @registry.register_optimizer
 def lookahead(learning_rate, hparams):
-  """By default, use LA_Adam with la_steps=5 and la_alpha=0.5."""
+  """By default, use LA_Adam with la_steps=10 and la_alpha=0.5."""
   optim = tf.contrib.opt.LazyAdamOptimizer(
             learning_rate,
             beta1=hparams.optimizer_adam_beta1,
             beta2=hparams.optimizer_adam_beta2,
             epsilon=hparams.optimizer_adam_epsilon)
-  return lookahead_tf.LookaheadOptimizer(optim, 5)
+  return lookahead_tf.LookaheadOptimizer(optim, 10)
 
 
 split_files = None

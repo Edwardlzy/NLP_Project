@@ -1,9 +1,9 @@
 #!/bin/bash
 
-eval_dir=/scratch/hdd001/home/edwardlzy/lm1b_transformer_lm_tpu_0_half
+eval_dir=/scratch/hdd001/home/edwardlzy/lm1b_transformer_lm_tpu_1
 data_dir=/scratch/hdd001/home/edwardlzy/lm1b_data/
 problem=languagemodel_lm1b32k
-hparams_set=transformer_lm_tpu_0
+hparams_set=transformer_lm_tpu_1
 usr_dir=/h/edwardlzy/NLP_Project/tensor2tensor/tensor2tensor/data_generators/openwebtext/
 nlp_repo=/h/edwardlzy/NLP_Project/
 
