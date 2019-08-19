@@ -38,6 +38,7 @@ class LargebatchOptimizer(optimizer.Optimizer):
     # Create slots for the accumulated parameter gradients.
     for v in var_list:
       self._zeros_slot(v, "accumulated_grad", self._name)
+      self._zeros_slot(v, "zero_grad", self._name)
 
   def _prepare(self):
     self.optimizer._prepare()
@@ -60,69 +61,100 @@ class LargebatchOptimizer(optimizer.Optimizer):
         graph = ops.get_default_graph()
       return self._get_non_slot_variable("update_step", graph=graph)
 
+  def process_grad(self, grad):
+    update_step = self._get_update_step_accumulators()
+    with ops.colocate_with(update_step):
+      def accumulate_grad():
+        # Add current gradients to the cached gradients.
+        ag = [self.get_slot(cur_g, "accumulated_grad").assign(self.get_slot(cur_g, "accumulated_grad") + cur_g) for cur_g in grad]
+        control_flow_ops.group([update_step.assign(update_step + 1, use_locking=self._use_locking)] + ag)
+        return [self.get_slot(cur_g, "zero_grad") for cur_g in grad]
+      def update_grad():
+        # Average the gradients and reset the update_step.
+        avg_grads = [self.get_slot(cur_g, "accumulated_grad") / update_step for cur_g in grad]
+        # avg_grads_and_vars = avg_grads_and_vars, grads_and_vars[1]
+        # apply_grad = self.optimizer.apply_gradients(avg_grads_and_vars)
+
+        update_step = update_step.assign(1, use_locking=self._use_locking)
+        new_grad = [self.get_slot(cur_g, "accumulated_grad").assign(cur_g) for cur_g in grad]
+        control_flow_ops.group(avg_grads + [update_step] + new_grad)
+        return avg_grads
+      condition = tf.greater_equal(update_step, self._update_steps_t)
+      update_params_states = tf.cond( condition,
+                                      update_grad,
+                                      accumulate_grad,
+                                    )
+    return control_flow_ops.group([update_params_states])
+
 
   def _apply_dense(self, grad, var):
+    grad = self.process_grad(grad)
     return self.optimizer._apply_dense(grad, var)
 
   def _resource_apply_dense(self, grad, var):
+    grad = self.process_grad(grad)
     return self.optimizer._resource_apply_dense(grad, var)
 
   def _apply_sparse_shared(self, grad, var, indices, scatter_add):
+    grad = self.process_grad(grad)
     return self.optimizer._apply_sparse_shared(grad, var, indices, scatter_add)
 
   def _apply_sparse(self, grad, var):
+    grad = self.process_grad(grad)
     return self.optimizer._apply_sparse(grad, var)
 
   def _resource_scatter_add(self, x, i, v):
     return self.optimizer._resource_scatter_add(x, i, v)
     
   def _resource_apply_sparse(self, grad, var, indices):
+    grad = self.process_grad(grad)
     return self.optimizer._resource_apply_sparse(grad, var, indices)
 
-  def minimize(self, loss, global_step=None, var_list=None,
-               gate_gradients=1, aggregation_method=None,
-               colocate_gradients_with_ops=False, name=None,
-               grad_loss=None):
+  # def minimize(self, loss, global_step=None, var_list=None,
+  #              gate_gradients=1, aggregation_method=None,
+  #              colocate_gradients_with_ops=False, name=None,
+  #              grad_loss=None):
 
-    grads_and_vars = self.optimizer.compute_gradients(
-        loss, var_list=var_list, gate_gradients=gate_gradients,
-        aggregation_method=aggregation_method,
-        colocate_gradients_with_ops=colocate_gradients_with_ops,
-        grad_loss=grad_loss)
+  #   grads_and_vars = self.optimizer.compute_gradients(
+  #       loss, var_list=var_list, gate_gradients=gate_gradients,
+  #       aggregation_method=aggregation_method,
+  #       colocate_gradients_with_ops=colocate_gradients_with_ops,
+  #       grad_loss=grad_loss)
 
-    vars_with_grad = [v for g, v in grads_and_vars if g is not None]
-    if not vars_with_grad:
-      raise ValueError(
-          "No gradients provided for any variable, check your graph for ops"
-          " that do not support gradients, between variables %s and loss %s." %
-          ([str(v) for _, v in grads_and_vars], loss))
+  #   vars_with_grad = [v for g, v in grads_and_vars if g is not None]
+  #   if not vars_with_grad:
+  #     raise ValueError(
+  #         "No gradients provided for any variable, check your graph for ops"
+  #         " that do not support gradients, between variables %s and loss %s." %
+  #         ([str(v) for _, v in grads_and_vars], loss))
 
-    with ops.control_dependencies([grads_and_vars,]):
-      update_step = self._get_update_step_accumulators()
-      with ops.colocate_with(update_step):
-        def accumulate_grad():
-          # Add current gradients to the cached gradients.
-          ag = [self.get_slot(cur_g, "accumulated_grad").assign(self.get_slot(cur_g, "accumulated_grad") + cur_g) for cur_g, _ in grads_and_vars]
-          return control_flow_ops.group([update_step.assign(update_step + 1, use_locking=self._use_locking)] + ag)
-        def update_grad():
-          # Average the gradients and reset the update_step.
-          avg_grads_and_vars = [self.get_slot(cur_g, "accumulated_grad") / update_step for cur_g, _ in grads_and_vars]
-          avg_grads_and_vars = avg_grads_and_vars, grads_and_vars[1]
-          apply_grad = self.optimizer.apply_gradients(avg_grads_and_vars)
+  #   with ops.control_dependencies([grads_and_vars,]):
+  #     update_step = self._get_update_step_accumulators()
+  #     with ops.colocate_with(update_step):
+  #       def accumulate_grad():
+  #         # Add current gradients to the cached gradients.
+  #         ag = [self.get_slot(cur_g, "accumulated_grad").assign(self.get_slot(cur_g, "accumulated_grad") + cur_g) for cur_g, _ in grads_and_vars]
+  #         return control_flow_ops.group([update_step.assign(update_step + 1, use_locking=self._use_locking)] + ag)
+  #       def update_grad():
+  #         # Average the gradients and reset the update_step.
+  #         avg_grads_and_vars = [self.get_slot(cur_g, "accumulated_grad") / update_step for cur_g, _ in grads_and_vars]
+  #         avg_grads_and_vars = avg_grads_and_vars, grads_and_vars[1]
+  #         apply_grad = self.optimizer.apply_gradients(avg_grads_and_vars)
 
-          update_step = update_step.assign(1, use_locking=self._use_locking)
-          new_grad = [self.get_slot(cur_g, "accumulated_grad").assign(cur_g) for cur_g, _ in grads_and_vars]
+  #         update_step = update_step.assign(1, use_locking=self._use_locking)
+  #         new_grad = [self.get_slot(cur_g, "accumulated_grad").assign(cur_g) for cur_g, _ in grads_and_vars]
 
-          return control_flow_ops.group(avg_grads_and_vars + [apply_grad, update_step] + new_grad)
+  #         return control_flow_ops.group(avg_grads_and_vars + [apply_grad, update_step] + new_grad)
 
-        condition = tf.greater_equal(update_step, self._update_steps_t)
-        update_params_states = tf.cond( condition,
-                                        update_grad,
-                                        accumulated_grad,
-                                      )
-    return control_flow_ops.group([update_params_states])
+  #       condition = tf.greater_equal(update_step, self._update_steps_t)
+  #       update_params_states = tf.cond( condition,
+  #                                       update_grad,
+  #                                       accumulated_grad,
+  #                                     )
+  #   return control_flow_ops.group([update_params_states])
 
   def _finish(self, update_ops, name_scope):
+    update_step = self._get_update_step_accumulators()
     return control_flow_ops.group([self.optimizer._finish(update_ops, name_scope)], name=name_scope)
 
   # def _finish(self, update_ops, name_scope):
