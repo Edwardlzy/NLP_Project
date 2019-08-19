@@ -80,7 +80,7 @@ class LargebatchOptimizer(optimizer.Optimizer):
     return self.optimizer._resource_apply_sparse(grad, var, indices)
 
   def minimize(self, loss, global_step=None, var_list=None,
-               gate_gradients=GATE_OP, aggregation_method=None,
+               gate_gradients=1, aggregation_method=None,
                colocate_gradients_with_ops=False, name=None,
                grad_loss=None):
 
@@ -106,7 +106,8 @@ class LargebatchOptimizer(optimizer.Optimizer):
           return control_flow_ops.group([update_step.assign(update_step + 1, use_locking=self._use_locking)] + ag)
         def update_grad():
           # Average the gradients and reset the update_step.
-          avg_grads_and_vars = [self.get_slot(cur_g, "accumulated_grad") / update_step, cur_v for cur_g, cur_v in grads_and_vars]
+          avg_grads_and_vars = [self.get_slot(cur_g, "accumulated_grad") / update_step for cur_g, _ in grads_and_vars]
+          avg_grads_and_vars = avg_grads_and_vars, grads_and_vars[1]
           apply_grad = self.optimizer.apply_gradients(avg_grads_and_vars)
 
           update_step = update_step.assign(1, use_locking=self._use_locking)
