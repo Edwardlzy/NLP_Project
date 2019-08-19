@@ -71,6 +71,12 @@ srun --gres=gpu:4 -c 32 -p p100 --mem=64G -w gpu033 t2t-trainer --data_dir=/scra
 srun --gres=gpu:1 -c 16 --mem=16G -p p100 t2t-decoder --data_dir=/scratch/hdd001/home/edwardlzy/openwebtext/tfrecords/ --tmp_dir=/scratch/hdd001/home/edwardlzy/openwebtext/text_data/ --problem=languagemodel_open_web_text --model=transformer --hparams_set=transformer_base --decode_hparams="beam_size=4,alpha=0.6" --decode_interactive --output_dir=/scratch/hdd001/home/edwardlzy/lm_openwebtext_train --t2t_usr_dir=/h/edwardlzy/NLP_Project/tensor2tensor/tensor2tensor/data_generators/openwebtext/
 ```
 
+### Evaluation
+`bash tensor2tensor/eval_lm.sh`
++ Modify the variables at the top
++ Results include the perplexity of the last, avg of the last 5 for every 1k steps, avg of the last 5 for every 5k steps and avg of the last 10 for every 1k steps checkpoints.
++ Look for the results in `$eval_dir/eval_results.txt`
+
 ## Logger Example Usage
 + Make sure to set the training hyperparameters in example_master_arguments.txt
 
@@ -120,7 +126,15 @@ srun --gres=gpu:1 -c 8 --mem=8G -p p100 python tensor2tensor/utils/avg_checkpoin
 | transformer_lm_tpu_0 | 31.48 | 250K | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
 | transformer_lm_tpu_0 | 30.18 | Avg_1K | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
 | transformer_lm_tpu_0 | 29.75 | Avg_5K | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 | 29.86 | Avg_1K_10 | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
 | transformer_lm_tpu_0 | 31.72 | 250K | SubwordTextEncoder | 50% of LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 | 30.50 | Avg_1K | SubwordTextEncoder | 50% of LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 | 29.96 | Avg_5K | SubwordTextEncoder | 50% of LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 | 30.12 | Avg_1K_10 | SubwordTextEncoder | 50% of LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 | 32.41 | 250K | SubwordTextEncoder | 25% of LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 | 31.09 | Avg_1K | SubwordTextEncoder | 25% of LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 | 30.56 | Avg_5K | SubwordTextEncoder | 25% of LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 | 30.72 | Avg_1K_10 | SubwordTextEncoder | 25% of LM1B Training Set | Adafactor | 16K |
 | transformer_lm_tpu_0 | 40.44 | 250K | BytePairEncoder | LM1B Training Set | Adam | 16K |
 | transformer_lm_tpu_0 | 38.91 | Avg_1K | BytePairEncoder | LM1B Training Set | Adam | 16K |
 | transformer_lm_tpu_0 | 38.81 | Avg_5K | BytePairEncoder | LM1B Training Set | Adam | 16K |

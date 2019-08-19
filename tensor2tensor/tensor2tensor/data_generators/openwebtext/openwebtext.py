@@ -17,6 +17,7 @@ from tensor2tensor.data_generators import text_encoder
 from tensor2tensor.data_generators import text_problems
 from tensor2tensor.utils import registry
 from . import lookahead_tensorflow as lookahead_tf
+from . import largebatch_optim
 
 import tensorflow as tf
 
@@ -29,6 +30,17 @@ def lookahead(learning_rate, hparams):
             beta2=hparams.optimizer_adam_beta2,
             epsilon=hparams.optimizer_adam_epsilon)
   return lookahead_tf.LookaheadOptimizer(optim, 10)
+
+
+@registry.register_optimizer
+def largebatch(learning_rate, hparams):
+  """ By default, use Adam with update_step=2. (Doubles the batch size) """
+  optim = tf.contrib.opt.LazyAdamOptimizer(
+            learning_rate,
+            beta1=hparams.optimizer_adam_beta1,
+            beta2=hparams.optimizer_adam_beta2,
+            epsilon=hparams.optimizer_adam_epsilon)
+  return largebatch_optim.LargebatchOptimizer(optim, 2)
 
 
 split_files = None
