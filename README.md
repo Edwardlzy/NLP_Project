@@ -115,30 +115,44 @@ srun --gres=gpu:1 -c 8 --mem=8G -p p100 python tensor2tensor/utils/avg_checkpoin
 + All scores are reported on newstest2014.
 + The averaged model from the original Transformer paper has 27.3 bleu score on newstest2014.
 
-#### LM1B 
+#### LM1B
 | Model | Perplexity | Iterations | Encoding | Training Data | Optimizer | Batch Size |
 |---|---|---|---|---|---|---|
-| transformer_base | 42.50 | 250K | SubwordTextEncoder | LM1B Training Set | Adam | 16K |
-| transformer_base | 140.70 | 250K | BytePairEncoder | OpenWebText | Adam | 16K |
-| transformer_base | 43.68 | 250K | BytePairEncoder | LM1B Training Set| Adam | 16K |
-| transformer_big | 152.70  | 250K | BytePairEncoder | OpenWebText| Adam | 16K |
-| transformer_big | 44.08 | 250K | SubwordTextEncoder | LM1B Training Set | Adam | 16K |
-| transformer_lm_tpu_0 | 31.48 | 250K | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
-| transformer_lm_tpu_0 | 30.18 | Avg_1K | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
-| transformer_lm_tpu_0 | 29.75 | Avg_5K | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
-| transformer_lm_tpu_0 | 29.86 | Avg_1K_10 | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
-| transformer_lm_tpu_0 | 31.72 | 250K | SubwordTextEncoder | 50% of LM1B Training Set | Adafactor | 16K |
-| transformer_lm_tpu_0 | 30.50 | Avg_1K | SubwordTextEncoder | 50% of LM1B Training Set | Adafactor | 16K |
-| transformer_lm_tpu_0 | 29.96 | Avg_5K | SubwordTextEncoder | 50% of LM1B Training Set | Adafactor | 16K |
-| transformer_lm_tpu_0 | 30.12 | Avg_1K_10 | SubwordTextEncoder | 50% of LM1B Training Set | Adafactor | 16K |
-| transformer_lm_tpu_0 | 32.41 | 250K | SubwordTextEncoder | 25% of LM1B Training Set | Adafactor | 16K |
-| transformer_lm_tpu_0 | 31.09 | Avg_1K | SubwordTextEncoder | 25% of LM1B Training Set | Adafactor | 16K |
-| transformer_lm_tpu_0 | 30.56 | Avg_5K | SubwordTextEncoder | 25% of LM1B Training Set | Adafactor | 16K |
-| transformer_lm_tpu_0 | 30.72 | Avg_1K_10 | SubwordTextEncoder | 25% of LM1B Training Set | Adafactor | 16K |
-| transformer_lm_tpu_0 | 40.44 | 250K | BytePairEncoder | LM1B Training Set | Adam | 16K |
-| transformer_lm_tpu_0 | 38.91 | Avg_1K | BytePairEncoder | LM1B Training Set | Adam | 16K |
-| transformer_lm_tpu_0 | 38.81 | Avg_5K | BytePairEncoder | LM1B Training Set | Adam | 16K |
+| transformer_lm_tpu_0 | 26.77 | 250K | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 | 26.06 | Avg_1K | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 | 25.75 | Avg_5K | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 | 25.85 | Avg_1K_10 | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 | 25.69 | Avg_1K_20 | SubwordTextEncoder | LM1B Training Set | Adafactor | 16K |
+| transformer_lm_tpu_0 | 30.00 | 250K | BytePairEncoder | LM1B Training Set | Adam | 16K |
+| transformer_lm_tpu_0 | 29.23 | Avg_1K | BytePairEncoder | LM1B Training Set | Adam | 16K |
+| transformer_lm_tpu_0 | 29.08 | Avg_5K | BytePairEncoder | LM1B Training Set | Adam | 16K |
+| transformer_lm_tpu_0 | 29.05 | Avg_1K_10 | BytePairEncoder | LM1B Training Set | Adam | 16K |
+| transformer_lm_tpu_0 | 28.96 | Avg_1K_20 | BytePairEncoder | LM1B Training Set | Adam | 16K |
+
+#### LM1B Deprecated
+| Model | Perplexity | Iterations | Encoding | Training Data | Optimizer | Batch Size |
+|---|---|---|---|---|---|---|
+| transformer_base | 42.50 | 250K | SubwordTextEncoder | LM1B Training Set | Adam | 4K |
+| transformer_base | 140.70 | 250K | BytePairEncoder | OpenWebText | Adam | 4K |
+| transformer_base | 43.68 | 250K | BytePairEncoder | LM1B Training Set| Adam | 4K |
+| transformer_big | 152.70  | 250K | BytePairEncoder | OpenWebText| Adam | 4K |
+| transformer_big | 44.08 | 250K | SubwordTextEncoder | LM1B Training Set | Adam | 4K |
+| transformer_lm_tpu_0 | 31.48 | 250K | SubwordTextEncoder | LM1B Training Set | Adafactor | 4K |
+| transformer_lm_tpu_0 | 30.18 | Avg_1K | SubwordTextEncoder | LM1B Training Set | Adafactor | 4K |
+| transformer_lm_tpu_0 | 29.75 | Avg_5K | SubwordTextEncoder | LM1B Training Set | Adafactor | 4K |
+| transformer_lm_tpu_0 | 29.86 | Avg_1K_10 | SubwordTextEncoder | LM1B Training Set | Adafactor | 4K |
+| transformer_lm_tpu_0 | 31.72 | 250K | SubwordTextEncoder | 50% of LM1B Training Set | Adafactor | 4K |
+| transformer_lm_tpu_0 | 30.50 | Avg_1K | SubwordTextEncoder | 50% of LM1B Training Set | Adafactor | 4K |
+| transformer_lm_tpu_0 | 29.96 | Avg_5K | SubwordTextEncoder | 50% of LM1B Training Set | Adafactor | 4K |
+| transformer_lm_tpu_0 | 30.12 | Avg_1K_10 | SubwordTextEncoder | 50% of LM1B Training Set | Adafactor | 4K |
+| transformer_lm_tpu_0 | 32.41 | 250K | SubwordTextEncoder | 25% of LM1B Training Set | Adafactor | 4K |
+| transformer_lm_tpu_0 | 31.09 | Avg_1K | SubwordTextEncoder | 25% of LM1B Training Set | Adafactor | 4K |
+| transformer_lm_tpu_0 | 30.56 | Avg_5K | SubwordTextEncoder | 25% of LM1B Training Set | Adafactor | 4K |
+| transformer_lm_tpu_0 | 30.72 | Avg_1K_10 | SubwordTextEncoder | 25% of LM1B Training Set | Adafactor | 4K |
+| transformer_lm_tpu_0 | 40.44 | 250K | BytePairEncoder | LM1B Training Set | Adam | 4K |
+| transformer_lm_tpu_0 | 38.91 | Avg_1K | BytePairEncoder | LM1B Training Set | Adam | 4K |
+| transformer_lm_tpu_0 | 38.81 | Avg_5K | BytePairEncoder | LM1B Training Set | Adam | 4K |
 | transformer_lm_tpu_0 | 41.05 | 250K | BytePairEncoder | LM1B Training Set | Lookahead_Adam | 4K |
-| transformer_lm_tpu_0 | 40.89 | 250K | BytePairEncoder | LM1B Training Set | Lookahead_Adam | 16K |
+| transformer_lm_tpu_0 | 40.89 | 250K | BytePairEncoder | LM1B Training Set | Lookahead_Adam | 4K |
 
 + Perplexity is reported on LM1B dev set.
