@@ -25,10 +25,6 @@ class LargebatchOptimizer(optimizer.Optimizer):
     self._batch_size_multiplier = update_steps
     self._update_step = 0
     
-    # self._la_step = 0
-    # self._la_alpha = la_alpha
-    # self._total_la_steps = la_steps
-
   def _create_slots(self, var_list):
     self.optimizer._create_slots(var_list)
     self._var_list = var_list
@@ -39,12 +35,9 @@ class LargebatchOptimizer(optimizer.Optimizer):
                                    colocate_with=first_var)
     
     # Create slots for the accumulated parameter gradients.
-    tf.logging.info("var_list length = %d", len(var_list))
     for v in var_list:
-      # tf.logging.info("v.shape = %s", str(v.shape))
       self._zeros_slot(v, "accumulated_grad", self._name)
       self._zeros_slot(v, "zero_grad", self._name)
-      # self._zeros_slot(v, "counter", self._name)
 
   def _prepare(self):
     self.optimizer._prepare()
@@ -52,13 +45,6 @@ class LargebatchOptimizer(optimizer.Optimizer):
     update_steps = self._call_if_callable(self._update_steps)
     var_list = self._call_if_callable(self._var_list)
     self._update_steps_t = ops.convert_to_tensor(update_steps, name="update_steps")
-
-    # la_alpha = self._call_if_callable(self._la_alpha)
-    # total_la_steps = self._call_if_callable(self._total_la_steps)
-    
-    # self._la_alpha_t = ops.convert_to_tensor(la_alpha, name="la_alpha")
-    # self._total_la_steps_t = ops.convert_to_tensor(total_la_steps, name="total_la_steps")
-
 
   def _get_update_step_accumulators(self):
     with ops.init_scope():
@@ -68,72 +54,27 @@ class LargebatchOptimizer(optimizer.Optimizer):
         graph = ops.get_default_graph()
       return self._get_non_slot_variable("update_step", graph=graph)
 
-  # def process_grad(self, grad):
-  #   update_step = self._get_update_step_accumulators()
-  #   with ops.colocate_with(update_step):
-  #     def accumulate_grad():
-  #       # Add current gradients to the cached gradients.
-  #       ag = [self.get_slot(cur_g, "accumulated_grad").assign(self.get_slot(cur_g, "accumulated_grad") + cur_g) for cur_g in grad]
-  #       control_flow_ops.group([update_step.assign(update_step + 1, use_locking=self._use_locking)] + ag)
-  #       return [self.get_slot(cur_g, "zero_grad") for cur_g in grad]
-  #     def update_grad():
-  #       # Average the gradients and reset the update_step.
-  #       avg_grads = [self.get_slot(cur_g, "accumulated_grad") / update_step for cur_g in grad]
-  #       # avg_grads_and_vars = avg_grads_and_vars, grads_and_vars[1]
-  #       # apply_grad = self.optimizer.apply_gradients(avg_grads_and_vars)
-
-  #       update_step = update_step.assign(1, use_locking=self._use_locking)
-  #       new_grad = [self.get_slot(cur_g, "accumulated_grad").assign(cur_g) for cur_g in grad]
-  #       control_flow_ops.group(avg_grads + [update_step] + new_grad)
-  #       return avg_grads
-  #     condition = tf.greater_equal(update_step, self._update_steps_t)
-  #     update_params_states = tf.cond( condition,
-  #                                     update_grad,
-  #                                     accumulate_grad,
-  #                                   )
-  #   return control_flow_ops.group([update_params_states])
-
   def process_grad(self, grad, var):
     update_step = self._get_update_step_accumulators()
-  # with ops.colocate_with(update_step):
     def accumulate_grad():
-      tf.logging.info("Entered accumulate_grad()...")
       # Add current gradients to the cached gradients.
       ag = self.get_slot(var, "accumulated_grad").assign(self.get_slot(var, "accumulated_grad") + grad)
-      # ag = [self.get_slot(cur_g, "accumulated_grad").assign(self.get_slot(cur_g, "accumulated_grad") + cur_g) for cur_g in grad]
-      # control_flow_ops.group([update_step.assign(update_step + 1, use_locking=self._use_locking)] + ag)
-      # control_flow_ops.group([self.get_slot(var, "counter").assign(self.get_slot(var, "counter") + 1), ag])
-      # update_counter = self.get_slot(var, "counter").assign(self.get_slot(var, "counter") + 1)
       update_counter = update_step.assign(update_step + 1, use_locking=self._use_locking)
       reset_zero_grad = self.get_slot(var, "zero_grad").assign(0.0 * self.get_slot(var, "zero_grad"))
       return control_flow_ops.group([ag, update_counter, reset_zero_grad])
-      # return self.get_slot(var, "zero_grad")
     def update_grad():
-      tf.logging.info("Entered update_grad()...")
       # Average the gradients and reset the update_step.
       avg_grads = self.get_slot(var, "accumulated_grad") / self._batch_size_multiplier #self.get_slot(var, "counter")
       set_zero_grad = self.get_slot(var, "zero_grad").assign(avg_grads)
-      #reset_counter = self.get_slot(var, "counter").assign(1)
       reset_counter = update_step.assign(1, use_locking=self._use_locking)
       set_grad = self.get_slot(var, "accumulated_grad").assign(grad)
       return control_flow_ops.group([set_zero_grad, reset_counter, set_grad])
-      # avg_grads_and_vars = avg_grads_and_vars, grads_and_vars[1]
-      # apply_grad = self.optimizer.apply_gradients(avg_grads_and_vars)
-      # control_flow_ops.group([self.get_slot(var, "counter").assign(1), self.get_slot(var, "accumulated_grad").assign(grad), avg_grads])
-
-      # update_step = update_step.assign(1, use_locking=self._use_locking)
-      # new_grad = [self.get_slot(cur_g, "accumulated_grad").assign(cur_g) for cur_g in grad]
-      # control_flow_ops.group(avg_grads + [update_step] + new_grad)
-      #return avg_grads
-    #condition = tf.greater_equal(tf.cast(self.get_slot(var, "counter"), tf.int32), self._update_steps_t)
     condition = tf.greater_equal(update_step, self._update_steps_t)
-    #tf.logging.info("update_step = %s, self._update_steps_t = %s", str(update_step), str(self._update_steps_t))
     update_params_states = tf.cond( condition,
                                     update_grad,
                                     accumulate_grad,
                                   )
     return control_flow_ops.group([update_params_states])
-
 
   def _apply_dense(self, grad, var):
     pgrad = self.process_grad(grad, var)
