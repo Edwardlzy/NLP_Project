@@ -1,6 +1,6 @@
 #!/bin/bash
 
-eval_dir=/scratch/hdd001/home/edwardlzy/multi_gpu/lm1b_transformer_lm_tpu_0 #lm1b_transformer_lm_tpu_1
+eval_dir=/scratch/hdd001/home/edwardlzy/multi_gpu/lm1b_transformer_lm_tpu_0_quarter #lm1b_transformer_lm_tpu_1
 data_dir=/scratch/hdd001/home/edwardlzy/lm1b_data/
 problem=languagemodel_lm1b32k
 hparams_set=transformer_lm_tpu_0

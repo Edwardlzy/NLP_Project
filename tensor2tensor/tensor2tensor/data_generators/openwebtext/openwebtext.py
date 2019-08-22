@@ -40,7 +40,7 @@ def largebatch(learning_rate, hparams):
             beta1=hparams.optimizer_adam_beta1,
             beta2=hparams.optimizer_adam_beta2,
             epsilon=hparams.optimizer_adam_epsilon)
-  return largebatch_optim.LargebatchOptimizer(optim, 4)
+  return largebatch_optim.LargebatchOptimizer(optim, 2)
 
 
 split_files = None
