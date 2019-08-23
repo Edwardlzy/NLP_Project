@@ -1351,7 +1351,8 @@ def dense_relu_dense(inputs,
       inputs,
       filter_size,
       use_bias=True,
-      activation=tf.nn.relu,
+      #activation=tf.nn.relu,
+      activation=gelu,
       layer_collection=layer_collection,
       name=layer_name.format("conv1"))
 

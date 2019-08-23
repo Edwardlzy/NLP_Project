@@ -18,6 +18,7 @@ from tensor2tensor.data_generators import text_problems
 from tensor2tensor.utils import registry
 from . import lookahead_tensorflow as lookahead_tf
 from . import largebatch_optim
+from tensor2tensor.models import transformer
 
 import tensorflow as tf
 
@@ -41,6 +42,26 @@ def largebatch(learning_rate, hparams):
             beta2=hparams.optimizer_adam_beta2,
             epsilon=hparams.optimizer_adam_epsilon)
   return largebatch_optim.LargebatchOptimizer(optim, 2)
+
+
+@registry.register_hparams
+def transformer_gpt2():
+  """HParams for training gpt2 on OpenWebText."""
+  hparams = transformer.transformer_lm_tpu_0()
+  hparams.num_heads = 12  # Heads are expensive on TPUs.
+  hparams.batch_size = 4096
+  hparams.filter_size = 768
+  hparams.learning_rate_constant = 2.5
+  hparams.hidden_size = 3072
+  hparams.learning_rate_warmup_steps = 2000
+  hparams.learning_rate_minimum = 0.0
+  hparams.learning_rate_cosine_cycle_steps = 2000000
+  hparams.learning_rate_schedule = "constant*linear_warmup*rsqrt_decay"
+  hparams.max_length = 1024
+  hparams.optimizer = "multistep_adam"
+  hparams.optimizer_multistep_accumulate_steps = 32
+  hparams.num_hidden_layers = 12
+  return hparams
 
 
 split_files = None
