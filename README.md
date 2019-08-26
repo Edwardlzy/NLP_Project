@@ -17,7 +17,6 @@ export PYTHONPATH=`pwd`
 ### OpenWebText
 + Scraped from urls provided in this repo: `https://github.com/jcpeterson/openwebtext`
 + Location: `/scratch/gobi1/datasets/NLP-Corpus/OpenWebText` and `/scratch/hdd001/home/edwardlzy/openwebtext/`
-+ Size: 152G
 
 ### Data Generation
 ```
@@ -114,6 +113,13 @@ srun --gres=gpu:1 -c 8 --mem=8G -p p100 python tensor2tensor/utils/avg_checkpoin
 
 + All scores are reported on newstest2014.
 + The averaged model from the original Transformer paper has 27.3 bleu score on newstest2014.
+
+#### OpenWebText
+| Model | LM1B | WikiText103 | Iterations | Batch Size |
+|---|---|---|---|---|
+| GPT2-small | 87.18 | 76.71 | 6016 | 524288 |
+
++ The perplexity is reported on LM1B dev set.
 
 #### LM1B
 | Model | Perplexity | Iterations | Encoding | Training Data | Evaluation Data | Optimizer | Batch Size |
