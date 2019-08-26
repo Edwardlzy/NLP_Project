@@ -117,7 +117,7 @@ srun --gres=gpu:1 -c 8 --mem=8G -p p100 python tensor2tensor/utils/avg_checkpoin
 #### OpenWebText
 | Model | Perplexity | Iterations | Batch Size |
 |---|---|---|---|
-| GPT-small | 87.18 | 6016 | 524288 |
+| GPT2-small | 87.18 | 6016 | 524288 |
 
 + The perplexity is reported on LM1B dev set.
 
