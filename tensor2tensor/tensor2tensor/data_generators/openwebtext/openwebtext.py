@@ -73,7 +73,7 @@ def transformer_gpt2():
 def transformer_gpt2_medium():
   """HParams for training gpt2_medium on OpenWebText."""
   hparams = transformer.transformer_lm_tpu_0()
-  hparams.num_heads = 12  # Heads are expensive on TPUs.
+  hparams.num_heads = 16  # Heads are expensive on TPUs.
   hparams.batch_size = 2048
   hparams.filter_size = 3072
   hparams.hidden_size = 1024
@@ -93,7 +93,7 @@ def transformer_gpt2_medium():
 def transformer_gpt2_large():
   """HParams for training gpt2_large on OpenWebText."""
   hparams = transformer.transformer_lm_tpu_0()
-  hparams.num_heads = 12  # Heads are expensive on TPUs.
+  hparams.num_heads = 20  # Heads are expensive on TPUs.
   hparams.batch_size = 2048 
   hparams.filter_size = 3072
   hparams.hidden_size = 1280
@@ -113,7 +113,7 @@ def transformer_gpt2_large():
 def transformer_gpt2_xlarge():
   """HParams for training gpt2_extra_large on OpenWebText."""
   hparams = transformer.transformer_lm_tpu_0()
-  hparams.num_heads = 12  # Heads are expensive on TPUs.
+  hparams.num_heads = 25  # Heads are expensive on TPUs.
   hparams.batch_size = 2048
   hparams.filter_size = 3072
   hparams.hidden_size = 1600
