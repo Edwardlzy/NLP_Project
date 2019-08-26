@@ -49,17 +49,18 @@ def transformer_gpt2():
   """HParams for training gpt2 on OpenWebText."""
   hparams = transformer.transformer_lm_tpu_0()
   hparams.num_heads = 12  # Heads are expensive on TPUs.
-  hparams.batch_size = 4096 #1024
+  hparams.batch_size = 2048 #4096 #1024
   hparams.filter_size = 3072
-  hparams.learning_rate_constant = 2.5
+  # hparams.learning_rate_constant = 2.5
   hparams.hidden_size = 768
   hparams.learning_rate_warmup_steps = 2000
   hparams.learning_rate_minimum = 0.0
   hparams.learning_rate_cosine_cycle_steps = 2000000
-  hparams.learning_rate_schedule = "constant*linear_warmup*rsqrt_decay"
+  hparams.learning_rate_constant = 2.5e-4
+  hparams.learning_rate_schedule = "constant*linear_warmup*cosdecay"  #"constant*linear_warmup*rsqrt_decay*rsqrt_hidden_size"
   hparams.max_length = 1024
   hparams.optimizer = "multistep_adam"
-  hparams.optimizer_multistep_accumulate_steps = 32 #128
+  hparams.optimizer_multistep_accumulate_steps = 64 #32 #128
   hparams.num_hidden_layers = 12
   return hparams
 

@@ -374,14 +374,13 @@ class T2TExperiment(object):
   """Custom Experiment class for running distributed experiments."""
 
   def __init__(self, estimator, hparams, train_spec, eval_spec,
-               use_validation_monitor, decode_hparams=None, server=None):
+               use_validation_monitor, decode_hparams=None):
     self._train_spec = train_spec
     self._eval_spec = eval_spec
     self._hparams = hparams
     self._decode_hparams = decode_hparams
     self._estimator = estimator
     self._use_validation_monitor = use_validation_monitor
-    self._server = server
 
   @property
   def estimator(self):
@@ -609,16 +608,6 @@ class T2TExperiment(object):
                              self._decode_hparams.decode_timeout_mins):
       self.decode(decode_from_file=True)
 
-def create_tf_server(config):
-  #tf.logging.info("task_type=%s", config.task_type,
-  #                "task_id=%d", config.task_id)
-  server = tf.train.Server(
-    config.cluster_spec,
-    job_name=config.task_type,
-    task_index=config.task_id,
-    config=config.tf_config,
-    start=True)
-  return server
 
 def create_experiment(
     run_config,
@@ -669,10 +658,6 @@ def create_experiment(
     if decode_reference and not decode_hparams.decode_reference:
       decode_hparams.decode_reference = decode_reference
   add_problem_hparams(hparams, problem_name)
-
-  server = None
-  if getattr(run_config, "cluster_spec") and schedule != "run_std_server":
-    server = create_tf_server(run_config)
 
   # Estimator
   estimator = create_estimator(
@@ -778,7 +763,7 @@ def create_experiment(
       exporters=exporter)
 
   return T2TExperiment(estimator, hparams, train_spec, eval_spec,
-                       use_validation_monitor, decode_hparams, server)
+                       use_validation_monitor, decode_hparams)
 
 
 def create_experiment_fn(*args, **kwargs):

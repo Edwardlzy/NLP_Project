@@ -339,7 +339,7 @@ class BytePairEncoder(TextEncoder):
 
   @property
   def vocab_size(self):
-    return 50000
+    return 50257
 
 
 class ClassLabelEncoder(TextEncoder):
