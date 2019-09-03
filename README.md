@@ -118,6 +118,7 @@ srun --gres=gpu:1 -c 8 --mem=8G -p p100 python tensor2tensor/utils/avg_checkpoin
 | Model | LM1B | WikiText103 | Iterations | Batch Size |
 |---|---|---|---|---|
 | GPT2-small | 87.18 | 76.71 | 6016 | 524288 |
+| GPT2-small | 71.53 | 56.71 | 23218 | 524288 |
 
 + The perplexity is reported on LM1B dev set.
 
