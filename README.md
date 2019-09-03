@@ -115,10 +115,11 @@ srun --gres=gpu:1 -c 8 --mem=8G -p p100 python tensor2tensor/utils/avg_checkpoin
 + The averaged model from the original Transformer paper has 27.3 bleu score on newstest2014.
 
 #### OpenWebText
-| Model | LM1B | WikiText103 | Iterations | Batch Size |
-|---|---|---|---|---|
-| GPT2-small | 87.18 | 76.71 | 6016 | 524288 |
-| GPT2-small | 71.53 | 56.71 | 23218 | 524288 |
+| Model | LM1B | WikiText103 | Iterations | Batch Size | Example Length |
+|---|---|---|---|---|---|
+| GPT2-small | 87.18 | 76.71 | 6016 | 524288 | sentence long |
+| GPT2-small | 71.53 | 56.71 | 23218 | 524288 | sentence long |
+| GPT2-small | 186.04 | 47.35 | 15625 | 524288 | ~1000 tokens per example |
 
 + The perplexity is reported on LM1B dev set.
 
